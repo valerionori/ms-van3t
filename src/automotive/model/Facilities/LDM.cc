@@ -16,6 +16,9 @@
  * Created by:
  *  Francesco Raviglione, Politecnico di Torino (francescorav.es483@gmail.com)
  *  Carlos Mateo Risma Carletti, Politecnico di Torino (carlosrisma@gmail.com)
+ * Modified by:
+ *  Valerio Nori, Università di Modena e Reggio Emilia (valerio.nori@hotmail.com)
+ *  Mattia Andreani, Università di Modena e Reggio Emilia (mattia.andreani@unimore.it)
 */
 #include "LDM.h"
 #include <cmath>
@@ -77,11 +80,19 @@ namespace ns3 {
     std::srand(Simulator::Now().GetNanoSeconds ());
     double desync = ((double)std::rand()/RAND_MAX);
     m_event_writeContents = Simulator::Schedule(MilliSeconds(LOG_FREQ+(desync*100)),&LDM::writeAllContents,this);
+
+    /* @VALERIO -> AoR check scheduling */
+    m_event_checkAreaOfRelevance = Simulator::Schedule(MilliSeconds(LOG_FREQ+(desync*100)),&LDM::checkAreaOfRelevance,this);
+
+    /* @VALERIO -> AoR Initialization */
+    AoR_radius = 250;
+    m_AoR = std::vector<std::string> ();
   }
 
   LDM::~LDM() {
       Simulator::Cancel(m_event_deleteOlderThan);
       Simulator::Cancel(m_event_writeContents);
+      Simulator::Cancel (m_event_checkAreaOfRelevance); // @VALERIO
       clear();
   }
 
@@ -524,5 +535,45 @@ namespace ns3 {
     retPos.y = boost::geometry::get<1>(point_type);
     retPos.z = 1.0;
     return retPos;
+  }
+
+  /* @VALERIO */
+  void
+  LDM::checkAreaOfRelevance ()
+  {
+    if (m_client == nullptr)
+      return;
+
+    m_AoR.clear();
+
+    /* Compute egoVehicle position */
+    libsumo::TraCIPosition egoPosXY = m_client->TraCIAPI::vehicle.getPosition(m_id);
+
+    /* Scan the LDM to check which UEs are within the AoR */
+    for (auto & it : m_LDM)
+    {
+      if(it.second.vehData.stationID != m_stationID) // Exclude this UE
+      {
+        std::string sID = "veh" + std::to_string(it.second.vehData.stationID);
+        libsumo::TraCIPosition objPosXY = m_client->TraCIAPI::vehicle.getPosition(sID);
+
+        if(sqrt(pow((egoPosXY.x-objPosXY.x),2) + pow((egoPosXY.y-objPosXY.y),2)) <= AoR_radius)
+        {
+          m_AoR.insert (m_AoR.end(), sID);
+        }
+      }
+    }
+
+    /* Fill the CSV file */
+    m_csv_name_aor = "Results/AoR/AoR-" + m_id + ".csv";
+    m_csv_ofstream_aor.open (m_csv_name_aor, std::ios::out);
+    for (const auto& element : m_AoR) {
+      m_csv_ofstream_aor << element << ",";
+    }
+
+    m_csv_ofstream_aor << std::endl;
+    m_csv_ofstream_aor.close ();
+
+    m_event_checkAreaOfRelevance = Simulator::Schedule(MilliSeconds(LOG_FREQ),&LDM::checkAreaOfRelevance,this);
   }
 }

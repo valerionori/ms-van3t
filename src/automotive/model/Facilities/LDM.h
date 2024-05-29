@@ -177,6 +177,14 @@ public:
      */
     void writeAllContents();
 
+    /**
+     * @VALERIO
+     *
+     * @brief This function can be used to check Objects in the LDM which are inside the Area of Relevance.
+     *        These measurements are used to compute the Environmental Awareness Ratio (EAR).
+     */
+    void checkAreaOfRelevance();
+
     void cleanup();
 
     /**
@@ -207,6 +215,8 @@ public:
     void setTraCIclient(Ptr<TraciClient> client){m_client=client;}
     void setVDP(VDP* vdp) {m_vdp=vdp;}
     void setStationType(StationType_t station_type){m_station_type=station_type;}
+
+    void setAreaOfRelevance(double radius){AoR_radius = radius;} // @VALERIO
 
     /**
      * @brief This function updates all the Perceived Object polygon's showing the current perception of them
@@ -240,10 +250,21 @@ private:
         EventId m_event_deleteOlderThan;
         EventId m_event_writeContents;
         EventId m_event_updatePolygons;
+        EventId m_event_checkAreaOfRelevance; // @VALERIO
 
 	double m_avg_dwell = 0.0;
 	int m_dwell_count = 0;
-        StationType_t m_station_type;
+  StationType_t m_station_type;
+
+  // @VALERIO -> Vector to store AoR values
+  std::vector<std::string> m_AoR;
+
+  // @VALERIO -> AoR radius in meters
+  double AoR_radius;
+
+  // @VALERIO -> CSV files for EAR measurements
+  std::string m_csv_name_aor;
+  std::ofstream m_csv_ofstream_aor;
 
 
 };

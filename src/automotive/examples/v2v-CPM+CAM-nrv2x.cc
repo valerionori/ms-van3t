@@ -77,6 +77,159 @@ GetSlBitmapFromString (const std::string& slBitMapString, std::vector <std::bits
   }
 }
 
+/**
+ * @VALERIO
+ *
+ * @brief This function detects the number of connected vehicles out of the total number of vehicles in the simulation.
+ *
+ * @param sumoClient  the pointer to the TraCI client
+ */
+std::vector<std::string> numberOfUEsEnabled;
+void
+detectConnectedVehicles(Ptr<TraciClient> sumoClient)
+{
+  std::vector<std::string> numberOfUEs;
+
+  numberOfUEs = sumoClient->vehicle.getIDList(); // Get all vehicle IDs
+
+  // Define the same color of connected UEs
+  libsumo::TraCIColor connected;
+  connected.r=0;connected.g=225;connected.b=255;connected.a=255;
+
+  // Fill the vector with connected UEs only
+  for (const auto& j:numberOfUEs)
+  {
+    auto color = sumoClient->TraCIAPI::vehicle.getColor(j);
+    if (color.r == connected.r && color.g == connected.g && color.b == connected.b && color.a == connected.a)
+      numberOfUEsEnabled.push_back(j);
+  }
+
+  std::cout << "Detected " << numberOfUEsEnabled.size() << " connected vehicles out of " << numberOfUEs.size() << std::endl;
+}
+
+/**
+ * @VALERIO
+ *
+ * @brief This function schedules the measurement of the Environmental Awareness Ratio (EAR).
+ *
+ * @param AoR_radius the radius of the Area od Relevance (AoR) in meters
+ * @param sumoClient the pointer to the TraCI client
+ *
+ * EAR is computed as the ratio between 'known' objects and actual objects within the AoR of the egoVehicle.
+ *      - 'known' objects are retrieved from a CSV file which is updated every 100 ms with every object in the LDM
+ *         of the egoVehicle within its AoR;
+ *      - actual objects within the AoR of the egoVehicle are retrieved from TraCI API.
+ *
+ * The two vectors are compared to see how many Objects do match (matching_object).
+ */
+void
+computeAwarenessRatio (Ptr<TraciClient> sumoClient, double AoR_radius)
+{
+  std::vector<std::string> AoR;     // Vector to store current Objects within the AoR
+
+  for(const auto& i:numberOfUEsEnabled)
+  {
+    /* Compute the position of the egoVehicle */
+    libsumo::TraCIPosition egoPosXY = sumoClient->TraCIAPI::vehicle.getPosition(i);
+
+    /* Get all IDs in the simulation and compare their distance from the egoVehicle*/
+    std::vector<std::string> allIDs;
+    allIDs = sumoClient->vehicle.getIDList ();  // Get all IDs in the simulation
+    allIDs.erase(std::remove(allIDs.begin(), allIDs.end(), i), allIDs.end()); // Exclude this UE
+
+    /* Clear AoR vector */
+    AoR.clear();
+
+    for(const auto & allID : allIDs)
+    {
+      // Compute the Object position
+      libsumo::TraCIPosition geoPosXY = sumoClient->TraCIAPI::vehicle.getPosition(allID);
+
+      // Check if the Object is within the AoR
+      if(sqrt(pow((egoPosXY.x-geoPosXY.x),2) + pow((egoPosXY.y-geoPosXY.y),2)) <= AoR_radius)
+        AoR.insert(AoR.end(), allID);  // Add the Object to the vector
+    }
+
+
+    /* Read the CSV file with the "known" Objects within the AoR and save the last result into a vector */
+    std::vector<std::string> AoR_K;
+
+    std::string aor_csv_name = "Results/AoR/AoR-" + i + ".csv";
+    std::ifstream aor_csv(aor_csv_name);
+    std::string line;
+
+    while (std::getline(aor_csv, line)) {
+      std::stringstream ss(line);
+      std::string value;
+
+      while (std::getline(ss, value, ',')) {
+        AoR_K.push_back(value);
+      }
+    }
+
+    /* Compare the two arrays on the terminal */
+    if (true)
+    {
+      std::sort(AoR.begin (), AoR.end ());
+      std::sort(AoR_K.begin (), AoR_K.end ());
+
+      std::cout << i << " AoR Evaluation:" << std::endl;
+
+      std::cout << "TRACI: ";
+
+      for (const auto& element : AoR) {
+        std::cout << element << " ";
+      }
+
+      std::cout << std::endl;
+
+      std::cout << "KNOWN: ";
+
+      for (const auto& element_known : AoR_K) {
+        std::cout << element_known << " ";
+      }
+
+      std::cout << std::endl;
+    }
+
+    /* Initialize the variables */
+    double EAR;
+    double matching_objects = 0;
+
+    /* Compare the two vectors */
+    for (const auto& element : AoR) {
+      for (const auto& element_known : AoR_K) {
+        if(element == element_known)
+          matching_objects++;
+      }
+    }
+
+    //std::cout << i << " -> matching objects: " << matching_objects << std::endl;
+
+    /* Compute the Awareness Ratio */
+    if(AoR.empty() && AoR_K.empty())
+      EAR = 1;
+    else if(AoR.size () >= AoR_K.size())
+      EAR = matching_objects/double(AoR.size ());
+    else
+      EAR = matching_objects/double(AoR_K.size ());
+
+    //std::cout << i << "-> EAR: " << EAR << std::endl;
+
+    /* Store computed EAR in a CSV file */
+    std::string ear_csv_name = "Results/EAR/EAR-" + i + ".csv";
+    std::ofstream ear_csv;
+    ear_csv.open(ear_csv_name, std::ios::app);
+    ear_csv << Simulator::Now().GetSeconds() << ","
+            << EAR << std::endl;
+
+    // In the Python script, compute the Average EAR and the eCDF for each scenario.
+  }
+
+  // Schedule the next measurement
+  Simulator::Schedule(Seconds(0.2), &computeAwarenessRatio, sumoClient, AoR_radius);
+}
+
 
 int
 main (int argc, char *argv[])
@@ -110,6 +263,9 @@ main (int argc, char *argv[])
   double simTime = 100.0;
   //Sidelink bearers activation time
   Time slBearersActivationTime = Seconds (2.0);
+
+  double AoR_radius = 150; // @VALERIO -> Area of Relevance (AoR) radius
+
 
 
   // NR parameters. We will take the input from the command line, and then we
@@ -727,6 +883,12 @@ main (int argc, char *argv[])
 
   /* start traci client with given function pointers */
   sumoClient->SumoSetup (setupNewWifiNode, shutdownWifiNode);
+
+  /* @VALERIO -> detect the number of connected vehicles */
+  Simulator::Schedule(Seconds(2.0), &detectConnectedVehicles, sumoClient);
+
+  /* @VALERIO -> compute the Environmental Awareness Ratio (EAR) */
+  Simulator::Schedule(Seconds(3.0), &computeAwarenessRatio, sumoClient, AoR_radius);
 
   /*** 8. Start Simulation ***/
   Simulator::Stop (Seconds(simTime));
