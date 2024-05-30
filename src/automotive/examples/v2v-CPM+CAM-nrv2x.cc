@@ -282,6 +282,8 @@ main (int argc, char *argv[])
 
   int16_t T_GenCpm = 100; // @VALERIO, @MATTIA -> set the CPM Generation Period to be applied
 
+  uint16_t sumo_seed = 10; // @VALERIO, @MATTIA -> seed for TraCI client
+
 
   // NR parameters. We will take the input from the command line, and then we
   // will pass them inside the NR module.
@@ -415,6 +417,9 @@ main (int argc, char *argv[])
   cmd.AddValue ("CPMGenerationPeriod",
                 "Set the CPM Generation Period",
                 T_GenCpm);
+  cmd.AddValue ("SUMOSeed",
+                "Set the seed for TraCI client",
+                sumo_seed);
 
 
   // Parse the command line
@@ -821,7 +826,7 @@ main (int argc, char *argv[])
   sumoClient->SetAttribute ("PenetrationRate", DoubleValue (penetrationRate));
   sumoClient->SetAttribute ("SumoLogFile", BooleanValue (false));
   sumoClient->SetAttribute ("SumoStepLog", BooleanValue (false));
-  sumoClient->SetAttribute ("SumoSeed", IntegerValue (10));
+  sumoClient->SetAttribute ("SumoSeed", IntegerValue (sumo_seed));
 
   std::string sumo_additional_options = "--verbose true";
 

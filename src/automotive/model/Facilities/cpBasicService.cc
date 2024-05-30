@@ -362,9 +362,9 @@ namespace ns3 {
 
                 if (it->vehData.perceivedBy.getData () != (long) m_station_id)
                   continue;
-                if (!checkCPMconditions (it) && m_redundancy_mitigation)
+                if (m_redundancy_mitigation && !checkCPMconditions (it))
                   continue;
-                if (m_voi_computation_method != "ETSI" && !checkValueOfInformation (it, m_voi_computation_method))
+                if (m_redundancy_mitigation && !checkValueOfInformation (it, m_voi_computation_method))
                   continue;
                 else
                   {

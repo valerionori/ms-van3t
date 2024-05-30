@@ -27,7 +27,7 @@ def run_simulation(ns3_path, results_path, maps_path, simTime,
     for i in scenarios:
 
         # Generate a rou.xml file with a specific number of vehicles
-        vehicleFlow.randomFlow(i, maps_path)
+        vehicleFlow.fixedFlow(i, maps_path)
 
         for j in redundancy:
             for k in penetration_rate:
@@ -42,7 +42,8 @@ def run_simulation(ns3_path, results_path, maps_path, simTime,
                         f"--bandwidthBandSl={channel_bandwidth*10} "
                         f"--penetrationRate={k} "
                         f"--CPMGenerationPeriod={z} "
-                        f"--sumo-gui={True}"
+                        f"--sumo-gui={True} "
+                        f"--SUMOSeed={seed}"
                     )
 
                     # Update Simulation Number
@@ -67,7 +68,7 @@ r = ['ETSI']                                    # Simulated Value of Information
 channel_bandwidth = 10                          # SL Channel Bandwidth in MHz
 penetration_rate = [0.2, 0.5, 1]                # Market Penetration Rate (MPR)
 T_CpmGen_ms = [100, 1000]                       # CPM Generation Period
-seeds = 2                                       # Number of simulations for each point
+seeds = [2785, 7277, 5242, 6516, 9689]          # Simulations seed
 
 # Take the Start Time of the Toolchain
 toolchain_start = datetime.now()
@@ -79,16 +80,18 @@ maps_path = os.path.expanduser(
     '~/CLionProjects/ms-van3t/ns-3-dev/src/automotive/examples/sumo_files_v2v_map_congestion/')
 
 # Run simulations for each parameter combination
-for i in range(seeds):
+seed_counter = 0
+for i in seeds:
 
     # Initialize all CSV files
-    initializeCSV.csv_paths_initialization(ns3_path, results_path, i)
+    initializeCSV.csv_paths_initialization(ns3_path, results_path, seed_counter)
 
     run_simulation(ns3_path, results_path, maps_path, simTime, AoR,
                    channel_bandwidth, penetration_rate, T_CpmGen_ms, s, r, i)
 
     os.chdir(ns3_path)
-    os.rename("Results/", "Seed_" + str(i) + "/")
+    os.rename("Results/", "Seed_" + str(seed_counter) + "/")
+    seed_counter += 1
 
 # Take the End Time of the Toolchain
 toolchain_end = datetime.now()
