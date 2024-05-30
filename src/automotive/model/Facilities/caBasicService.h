@@ -303,6 +303,9 @@ namespace ns3
     // Boolean/Enum variables to enable/disable the presence of certain optional containers in the CAM messages
     bool m_lowFreqContainerEnabled;
     bool m_specialVehContainerEnabled;
+
+    std::string m_csv_name_trace; //!< @VALERIO @MATTIA CSV file name for CPM traces
+    std::ofstream m_csv_ofstream_trace; //!< @VALERIO @MATTIA CSV log stream (CPM), created using m_csv_name_trace
   };
 }
 

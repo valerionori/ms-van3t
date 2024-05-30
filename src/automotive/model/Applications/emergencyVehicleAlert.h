@@ -136,6 +136,8 @@ class emergencyVehicleAlert : public Application
     bool m_real_time; //!< To decide wheter to use realtime scheduler
     std::string m_csv_name; //!< CSV log file name
     std::ofstream m_csv_ofstream_cam; //!< CSV log stream (CAM), created using m_csv_name
+    std::string m_csv_name_trace; //!< @VALERIO CSV file name for CPM traces
+    std::ofstream m_csv_ofstream_cpm; //!< @VALERIO CSV log stream (CPM), created using m_csv_name_cpm
 
     /* Counters */
     int m_cam_received;
@@ -152,6 +154,10 @@ class emergencyVehicleAlert : public Application
     bool m_send_cpm;
 
     Ptr<MetricSupervisor> m_metric_supervisor = nullptr;
+
+    bool m_redundancy_mitigation; //!< @VALERIO enable the Redundancy Mitigation Rules
+    int16_t m_T_GenCpm; //!< @VALERIO set the CPM Generation Period
+    double m_AoR_radius; //!< @VALERIO set the Area of Relevance radius
 
   };
 

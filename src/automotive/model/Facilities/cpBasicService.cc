@@ -15,6 +15,9 @@
 
  * Created by:
  *  Carlos Mateo Risma Carletti, Politecnico di Torino (carlosrisma@gmail.com)
+ *Modified by:
+ *  Valerio Nori, Università di Modena e Reggio Emilia (valerio.nori@hotmail.com)
+ *  Mattia Andreani, Università di Modena e Reggio Emilia (mattia.andreani@unimore.it)
 */
 
 #include "cpBasicService.h"
@@ -118,11 +121,11 @@ namespace ns3 {
       return true;
 
     /* Get the last position of the reference point of this object lastly included in a CPM from the object pathHistory*/
-    std::map<uint64_t, PHData_t>::reverse_iterator it = phPoints.rbegin ();
+    auto it = phPoints.rbegin ();
     it ++;
     for(auto fromPrev = it; fromPrev!=phPoints.rend(); fromPrev++)
       {
-        if (fromPrev->second.CPMincluded == true)
+        if (fromPrev->second.CPMincluded)
           {
             previousCPM = fromPrev->second;
           }
@@ -168,7 +171,7 @@ namespace ns3 {
     /* Collect data for mandatory containers */
     auto cpm = asn1cpp::makeSeq (CollectivePerceptionMessage);
 
-    if (bool (cpm) == false)
+    if (!bool(cpm))
       {
         NS_LOG_ERROR ("Warning: unable to encode CPM.");
         return;
@@ -183,7 +186,7 @@ namespace ns3 {
     auto CPM_POs = asn1cpp::makeSeq (PerceivedObjects);
     //std::cout << "[CPM] Vehicle " << m_station_id << " position: " << m_vdp->getPositionXY().x << " " << m_vdp->getPositionXY().y << std::endl;
 
-    if (m_LDM != NULL)
+    if (m_LDM != nullptr)
       {
         std::vector<LDM::returnedVehicleData_t> LDM_POs;
         if (m_LDM->getAllPOs (LDM_POs)) // If there are any POs in the LDM
@@ -203,7 +206,7 @@ namespace ns3 {
                     asn1cpp::setField (PO->objectId, it->vehData.stationID);
                     long timeOfMeasurement =
                         (Simulator::Now ().GetMicroSeconds () - it->vehData.timestamp_us) /
-                        1000; // time of measuremente in ms
+                        1000; // time of measurement in ms
                     if (timeOfMeasurement > 1500)
                       timeOfMeasurement = 1500;
                     asn1cpp::setField (PO->measurementDeltaTime, timeOfMeasurement);
@@ -377,10 +380,12 @@ namespace ns3 {
                            sensorInfoContainer);
         asn1cpp::sequenceof::pushList (cpm->payload.cpmContainers, CPMcontainer);
         m_T_LastSensorInfoContainer = now;
+        SensorInfoContainerIncluded = true;
       }
     else
       {
         //If no sensorInformationContainer and no perceivedObjectsContainer
+        SensorInfoContainerIncluded = false;
         if (numberOfPOs == 0)
           return; //No CPM is generated in the current cycle
       }
@@ -399,7 +404,7 @@ namespace ns3 {
     // TODO: Support for Perception Region information from LDM (to be implemented in both SUMOensor and CARLAsensor)
 
     encode_result = asn1cpp::uper::encode(cpm);
-    if(encode_result.size()<1)
+    if(encode_result.empty())
     {
         NS_LOG_ERROR("Warning: unable to encode CPM.");
         return;
@@ -417,7 +422,7 @@ namespace ns3 {
     dataRequest.GNMaxRepInt=0;
     dataRequest.GNMaxLife = 1;
     dataRequest.GNMaxHL = 1;
-    dataRequest.GNTraClass = 0x02; // Store carry foward: no - Channel offload: no - Traffic Class ID: 2
+    dataRequest.GNTraClass = 0x02; // Store carry forward: no - Channel offload: no - Traffic Class ID: 2
     dataRequest.lenght = packet->GetSize ();
     dataRequest.data = packet;
     m_btp->sendBTP(dataRequest);
@@ -427,6 +432,22 @@ namespace ns3 {
     // Store the time in which the last CPM (i.e. this one) has been generated and successfully sent
     m_T_GenCpm_ms=now-lastCpmGen;
     lastCpmGen = now;
+
+    /** @VALERIO, @MATTIA Fill the trace file */
+    m_csv_name_trace = "Results/Traces/Trace-veh" + std::to_string(m_station_id) + ".csv";
+    std::ifstream m_csv_ifstream_trace(m_csv_name_trace);
+    m_csv_ofstream_trace.open(m_csv_name_trace, std::ios::app);
+    if (!m_csv_ifstream_trace.is_open())
+      m_csv_ofstream_trace << "messageId,stationId,timestamp,size(bytes),numberOfPOs,SICincluded" << std::endl;
+    m_csv_ofstream_trace << cpm->header.messageId << ","
+                         << cpm->header.stationId << ","
+                         << lastCpmGen << ","
+                         << encode_result.size() << ","
+                         << numberOfPOs << ","
+                         << SensorInfoContainerIncluded << ","
+                         << std::endl;
+
+    m_csv_ofstream_trace.close();
   }
   void
   CPBasicService::startCpmDissemination()
@@ -509,7 +530,7 @@ namespace ns3 {
     /** Decoding **/
     decoded_cpm = asn1cpp::uper::decode(packetContent, CollectivePerceptionMessage);
 
-    if(bool(decoded_cpm)==false) {
+    if(!bool(decoded_cpm)) {
         NS_LOG_ERROR("Warning: unable to decode a received CPM.");
         return;
       }
@@ -531,7 +552,7 @@ namespace ns3 {
       }
     else
       {
-        struct timespec tv;
+        struct timespec tv{};
 
         clock_gettime (CLOCK_MONOTONIC, &tv);
 

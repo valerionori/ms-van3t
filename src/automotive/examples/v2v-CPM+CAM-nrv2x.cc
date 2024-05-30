@@ -122,6 +122,7 @@ detectConnectedVehicles(Ptr<TraciClient> sumoClient)
  *
  * The two vectors are compared to see how many Objects do match (matching_object).
  */
+std::vector<double> Average_EAR_Overall = {};
 void
 computeAwarenessRatio (Ptr<TraciClient> sumoClient, double AoR_radius)
 {
@@ -223,7 +224,8 @@ computeAwarenessRatio (Ptr<TraciClient> sumoClient, double AoR_radius)
     ear_csv << Simulator::Now().GetSeconds() << ","
             << EAR << std::endl;
 
-    // In the Python script, compute the Average EAR and the eCDF for each scenario.
+    /* Add the computed EAR to the vector for Average computation */
+    Average_EAR_Overall.push_back(EAR);
   }
 
   // Schedule the next measurement
@@ -264,8 +266,9 @@ main (int argc, char *argv[])
   //Sidelink bearers activation time
   Time slBearersActivationTime = Seconds (2.0);
 
-  double AoR_radius = 150; // @VALERIO -> Area of Relevance (AoR) radius
-
+  double AoR_radius = 250; // @VALERIO -> Area of Relevance (AoR) radius
+  bool redundancyMitigation; // @VALERIO -> set the Redundancy Mitigation Rule to be applied
+  int16_t T_GenCpm = 100; // @VALERIO, @MATTIA -> set the CPM Generation Period to be applied
 
 
   // NR parameters. We will take the input from the command line, and then we
@@ -386,6 +389,17 @@ main (int argc, char *argv[])
   cmd.AddValue ("mcs",
                 "The MCS to used for sidelink",
                 mcs);
+
+  /* @VALERIO, @MATTIA -> Added command line values for new parameters */
+  cmd.AddValue ("AreaOfRelevance",
+                "Set the radius of the Area of Relevance (AoR) in meters",
+                AoR_radius);
+  cmd.AddValue ("RedundancyMitigation",
+                "Enable the Redundancy Mitigation Rules defined by ETSI fro CPMs",
+                redundancyMitigation);
+  cmd.AddValue ("CPMGenerationPeriod",
+                "Set the CPM Generation Period",
+                T_GenCpm);
 
 
   // Parse the command line
@@ -840,6 +854,10 @@ main (int argc, char *argv[])
   EmergencyVehicleAlertHelper.SetAttribute ("MetricSupervisor", PointerValue (metSup));
   EmergencyVehicleAlertHelper.SetAttribute ("SendCPM", BooleanValue(true));
   EmergencyVehicleAlertHelper.SetAttribute ("SendCAM", BooleanValue(true));
+  /* @VALERIO, @MATTIA -> Added Attributes for new parameters */
+  EmergencyVehicleAlertHelper.SetAttribute ("AreaOfRelevance", DoubleValue(AoR_radius));
+  EmergencyVehicleAlertHelper.SetAttribute ("RedundancyMitigation", BooleanValue(redundancyMitigation));
+  EmergencyVehicleAlertHelper.SetAttribute ("CPMGenerationPeriod", IntegerValue(T_GenCpm));
 
   /* callback function for node creation */
   int i=0;
@@ -888,7 +906,8 @@ main (int argc, char *argv[])
   Simulator::Schedule(Seconds(2.0), &detectConnectedVehicles, sumoClient);
 
   /* @VALERIO -> compute the Environmental Awareness Ratio (EAR) */
-  Simulator::Schedule(Seconds(3.0), &computeAwarenessRatio, sumoClient, AoR_radius);
+  if(m_metric_sup)
+    Simulator::Schedule(Seconds(3.0), &computeAwarenessRatio, sumoClient, AoR_radius);
 
   /*** 8. Start Simulation ***/
   Simulator::Stop (Seconds(simTime));
@@ -898,27 +917,79 @@ main (int argc, char *argv[])
 
   if(m_metric_sup)
   {
-    if(!csv_name_cumulative.empty())
+    /** @VALERIO PRR data processing */
+    std::ofstream csv_ofstream_prr;
+    std::string csv_name_prr = "Results/PRR/Average_PRR.csv";
+
+    if(access(csv_name_prr.c_str(),F_OK)!=-1)
     {
-      std::ofstream csv_cum_ofstream;
-      std::string full_csv_name = csv_name_cumulative + ".csv";
-
-      if(access(full_csv_name.c_str(),F_OK)!=-1)
-      {
-        // The file already exists
-        csv_cum_ofstream.open(full_csv_name,std::ofstream::out | std::ofstream::app);
-      }
-      else
-      {
-        // The file does not exist yet
-        csv_cum_ofstream.open(full_csv_name);
-        csv_cum_ofstream << "current_txpower_dBm,avg_PRR,avg_latency_ms" << std::endl;
-      }
-
-      csv_cum_ofstream << txPower << "," << metSup->getAveragePRR_overall () << "," << metSup->getAverageLatency_overall () << std::endl;
+      // The file already exists
+      csv_ofstream_prr.open(csv_name_prr,std::ofstream::out | std::ofstream::app);
     }
-    std::cout << "Average PRR: " << metSup->getAveragePRR_overall () << std::endl;
+    else
+    {
+      // The file does not exist yet
+      csv_ofstream_prr.open(csv_name_prr);
+      csv_ofstream_prr << "numberOfUEs,RMR,MPR,T_Cpm_Gen,Average PRR,Average Latency" << std::endl;
+    }
+
+    // Fill the CVS file
+    csv_ofstream_prr << numberOfNodes << "," << redundancyMitigation << "," << penetrationRate << "," << T_GenCpm << "," << metSup->getAveragePRR_overall() << "," << metSup->getAverageLatency_overall () << std::endl;
+
+    std::cout << "Average PRR: " << metSup->getAveragePRR_overall() << std::endl;
     std::cout << "Average latency (ms): " << metSup->getAverageLatency_overall () << std::endl;
+
+
+    /** @VALERIO CBR data processing */
+    std::ofstream csv_ofstream_cbr;
+    std::string csv_name_cbr = "Results/CBR/Average_CBR.csv";
+
+    if(access(csv_name_cbr.c_str(),F_OK)!=-1)
+    {
+      // The file already exists
+      csv_ofstream_cbr.open(csv_name_cbr,std::ofstream::out | std::ofstream::app);
+    }
+    else
+    {
+      // The file does not exist yet
+      csv_ofstream_cbr.open(csv_name_cbr);
+      csv_ofstream_cbr << "numberOfUEs,RMR,MPR,T_Cpm_Gen,Average CBR" << std::endl;
+    }
+
+    // Fill the CVS file
+    csv_ofstream_cbr << numberOfNodes << "," << redundancyMitigation << "," << penetrationRate << "," << T_GenCpm << "," << metSup->getAverageCBROverall() << std::endl;
+
+    std::cout << "Average CBR: " << metSup->getAverageCBROverall() << std::endl;
+
+    /** @VALERIO EAR data processing */
+    std::ofstream csv_ofstream_ear;
+    std::string csv_name_ear = "Results/EAR/Average_EAR.csv";
+
+    if(access(csv_name_ear.c_str(),F_OK)!=-1)
+    {
+      // The file already exists
+      csv_ofstream_ear.open(csv_name_ear,std::ofstream::out | std::ofstream::app);
+    }
+    else
+    {
+      // The file does not exist yet
+      csv_ofstream_ear.open(csv_name_ear);
+      csv_ofstream_ear << "numberOfUEs,RMR,MPR,T_Cpm_Gen,Average EAR" << std::endl;
+    }
+
+    // Compute the Average EAR
+    double Average_EAR = 0;
+    for(auto it:Average_EAR_Overall)
+    {
+      Average_EAR += it;
+    }
+    if(!Average_EAR_Overall.empty())
+      Average_EAR /= (double) Average_EAR_Overall.size();
+
+    // Fill the CVS file
+    csv_ofstream_ear << numberOfNodes << "," << redundancyMitigation << "," << penetrationRate << "," << T_GenCpm << "," << Average_EAR << std::endl;
+
+    std::cout << "Average EAR: " << Average_EAR << std::endl;
   }
 
 

@@ -870,6 +870,22 @@ namespace ns3
     m_T_GenCam_ms=now-lastCamGen;
     lastCamGen = now;
 
+    /** @VALERIO, @MATTIA Fill the trace file */
+    m_csv_name_trace = "Results/Traces/Trace-veh" + std::to_string(m_station_id) + ".csv";
+    std::ifstream m_csv_ifstream_trace(m_csv_name_trace);
+    m_csv_ofstream_trace.open(m_csv_name_trace, std::ios::app);
+    if (!m_csv_ifstream_trace.is_open())
+      m_csv_ofstream_trace << "messageId,stationId,timestamp,size(bytes),numberOfPOs,SICincluded" << std::endl;
+    m_csv_ofstream_trace << cam->header.messageId << ","
+                         << cam->header.stationId << ","
+                         << lastCamGen << ","
+                         << encode_result.size() << ","
+                         << 0 << ","
+                         << 0 << ","
+                         << std::endl;
+
+    m_csv_ofstream_trace.close();
+
     // Save this point in the list of PH points (if the low frequency container transmission is enabled)
     if(m_lowFreqContainerEnabled == true)
     {

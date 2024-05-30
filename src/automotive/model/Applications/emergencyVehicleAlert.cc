@@ -17,6 +17,9 @@
  *  Marco Malinverno, Politecnico di Torino (marco.malinverno1@gmail.com)
  *  Francesco Raviglione, Politecnico di Torino (francescorav.es483@gmail.com)
  *  Carlos Mateo Risma Carletti, Politecnico di Torino (carlosrisma@gmail.com)
+ * Modified by:
+ *  Valerio Nori, Università di Modena e Reggio Emilia (valerio.nori@hotmail.com)
+ *  Mattia Andreani, Università di Modena e Reggio Emilia (mattia.andreani@unimore.it)
 */
 
 #include "emergencyVehicleAlert.h"
@@ -110,7 +113,24 @@ namespace ns3
            "To enable/disable the transmission of CPM messages",
            BooleanValue(true),
            MakeBooleanAccessor (&emergencyVehicleAlert::m_send_cpm),
-           MakeBooleanChecker ());
+           MakeBooleanChecker ())
+
+        /* @VALERIO, @MATTIA -> Added Attributes for new parameters */
+        .AddAttribute ("RedundancyMitigation",
+                       "To enable the Redundancy Mitigation Rules defined by ETSI fro CPMs",
+                       StringValue (),
+                       MakeBooleanAccessor (&emergencyVehicleAlert::m_redundancy_mitigation),
+                       MakeBooleanChecker ())
+        .AddAttribute ("AreaOfRelevance",
+                       "To set Area of Relevance (AoR) radius",
+                       DoubleValue (),
+                       MakeDoubleAccessor ( &emergencyVehicleAlert::m_AoR_radius),
+                       MakeDoubleChecker<double>())
+        .AddAttribute("CPMGenerationPeriod",
+                      "To set the CPM Generation Period",
+                      IntegerValue(),
+                      MakeIntegerAccessor(&emergencyVehicleAlert::m_T_GenCpm),
+                      MakeIntegerChecker<int16_t>());
         return tid;
   }
 
@@ -128,8 +148,11 @@ namespace ns3
     m_denm_received = 0;
     m_denm_intertime = 0;
 
-    m_distance_threshold = 75; // Distance used in GeoNet to determine the radius of the circumference arounf the emergency vehicle where the DENMs are valid
-    m_heading_threshold = 45; // Max heading angle difference between the normal vehicles and the emergenecy vehicle, that triggers a reaction in the normal vehicles
+    m_distance_threshold = 75; // Distance used in GeoNet to determine the radius of the circumference around the emergency vehicle where the DENMs are valid
+    m_heading_threshold = 45; // Max heading angle difference between the normal vehicles and the emergency vehicle, that triggers a reaction in the normal vehicles
+
+    m_redundancy_mitigation = true; // @VALERIO
+    m_T_GenCpm = 100; // @VALERIO, @MATTIA
   }
 
   emergencyVehicleAlert::~emergencyVehicleAlert ()
@@ -167,12 +190,14 @@ namespace ns3
     m_LDM->setStationID(m_id);
     m_LDM->setTraCIclient(m_client);
     m_LDM->setVDP(traci_vdp);
+    m_LDM->setAreaOfRelevance(m_AoR_radius); // @VALERIO
 
     m_sensor = CreateObject<SUMOSensor>();
     m_sensor->setStationID(m_id);
     m_sensor->setTraCIclient(m_client);
     m_sensor->setVDP(traci_vdp);
     m_sensor->setLDM (m_LDM);
+    m_sensor->setSensorRange (50); // @VALERIO
 
     // Create new BTP and GeoNet objects and set them in DENBasicService and CABasicService
     m_btp = CreateObject <btp>();
@@ -245,36 +270,25 @@ namespace ns3
     m_denService.setSocketTx (m_socket);
     m_denService.setSocketRx (m_socket);
     m_denService.setStationProperties (std::stol(m_id.substr (3)), (long)stationtype);
-    m_denService.addDENRxCallback (std::bind(&emergencyVehicleAlert::receiveDENM,this,std::placeholders::_1,std::placeholders::_2));
+    //m_denService.addDENRxCallback ([this](auto && PH1, auto && PH2) { receiveDENM(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
     m_denService.setRealTime (m_real_time);
 
     /* Set sockets, callback, station properties and TraCI VDP in CABasicService */
     m_caService.setSocketTx (m_socket);
     m_caService.setSocketRx (m_socket);
     m_caService.setStationProperties (std::stol(m_id.substr (3)), (long)stationtype);
-    m_caService.addCARxCallback (std::bind(&emergencyVehicleAlert::receiveCAM,this,std::placeholders::_1,std::placeholders::_2));
+    m_caService.addCARxCallback ([this](auto && PH1, auto && PH2) { receiveCAM(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
     m_caService.setRealTime (m_real_time);
 
     /* Set sockets, callback, station properties and TraCI VDP in CPBasicService */
     m_cpService.setSocketTx (m_socket);
     m_cpService.setSocketRx (m_socket);
     m_cpService.setStationProperties (std::stol(m_id.substr (3)), (long)stationtype);
-    m_cpService.addCPRxCallback (std::bind(&emergencyVehicleAlert::receiveCPM,this,std::placeholders::_1,std::placeholders::_2));
+    m_cpService.addCPRxCallback ([this](auto && PH1, auto && PH2) { receiveCPM(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
     m_cpService.setRealTime (m_real_time);
     m_cpService.setTraCIclient (m_client);
-
-    /* IF CPMv1 facility is needed
-    m_cpService_v1.setBTP (m_btp);
-    m_cpService_v1.setLDM(m_LDM);
-    m_cpService_v1.setSocketTx (m_socket);
-    m_cpService_v1.setSocketRx (m_socket);
-    m_cpService_v1.setVDP(traci_vdp);
-    m_cpService_v1.setTraCIclient(m_client);
-    m_cpService_v1.setRealTime(m_real_time);
-    m_cpService_v1.setStationProperties(std::stol(m_id.substr (3)), (long)stationtype);
-    m_cpService_v1.addCPRxCallback(std::bind(&emergencyVehicleAlert::receiveCPMV1,this,std::placeholders::_1,std::placeholders::_2));
-    m_cpService_v1.startCpmDissemination ();
-    */
+    m_cpService.enableRedundancyMitigation(true); // @VALERIO
+    m_cpService.changeTGenCpm(m_T_GenCpm); // @VALERIO
 
     /* Set TraCI VDP for GeoNet object */
     m_caService.setVDP(traci_vdp);
@@ -282,7 +296,7 @@ namespace ns3
     m_cpService.setVDP(traci_vdp);
 
     /* Schedule CAM dissemination */
-    if(m_send_cam == true)
+    if(m_send_cam)
     {
       // Old desync code kept just for reference
       // It may lead to nodes not being desynchronized properly in specific situations in which
@@ -299,7 +313,7 @@ namespace ns3
     }
 
     /* Schedule CPM dissemination */
-    if(m_send_cpm == true)
+    if(m_send_cpm)
     {
       m_cpService.startCpmDissemination ();
     }
@@ -354,169 +368,10 @@ namespace ns3
   void
   emergencyVehicleAlert::receiveCAM (asn1cpp::Seq<CAM> cam, Address from)
   {
-    /* Implement CAM strategy here */
+   /* Implement CAM strategy here */
    m_cam_received++;
-
-   /* If the CAM is received from an emergency vehicle, and the host vehicle is a "passenger" car, then process the CAM */
-//   if (asn1cpp::getField(cam->cam.camParameters.basicContainer.stationType,StationType_t)==StationType_specialVehicle && m_type!="emergency")
-//   {
-//     libsumo::TraCIPosition pos=m_client->TraCIAPI::vehicle.getPosition(m_id);
-//     pos=m_client->TraCIAPI::simulation.convertXYtoLonLat (pos.x,pos.y);
-//
-//     /* If the distance between the "passenger" car and the emergency vehicle and the difference in the heading angles
-//      * are below certain thresholds, then actuate the slow-down strategy */
-//     if (appUtil_haversineDist (pos.y,pos.x,
-//                                asn1cpp::getField(cam->cam.camParameters.basicContainer.referencePosition.latitude,double)/DOT_ONE_MICRO,
-//                                asn1cpp::getField(cam->cam.camParameters.basicContainer.referencePosition.longitude,double)/DOT_ONE_MICRO)
-//         < m_distance_threshold
-//         &&
-//         appUtil_angDiff (m_client->TraCIAPI::vehicle.getAngle (m_id),(double)asn1cpp::getField(cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.heading.headingValue,HeadingValue_t)/DECI)<m_heading_threshold)
-//     {
-//       /* Slowdown only if you are not in the takeover lane,
-//        * otherwise the emergency vechicle may get stuck behind */
-//       if (m_client->TraCIAPI::vehicle.getLaneIndex (m_id) == 0)
-//       {
-//         m_client->TraCIAPI::vehicle.changeLane (m_id,0,3);
-//         m_client->TraCIAPI::vehicle.setMaxSpeed (m_id, m_max_speed*0.5);
-//         libsumo::TraCIColor orange;
-//         orange.r=232;orange.g=126;orange.b=4;orange.a=255;
-//         m_client->TraCIAPI::vehicle.setColor (m_id,orange);
-//
-//         Simulator::Remove(m_speed_ev);
-//         m_speed_ev = Simulator::Schedule (Seconds (3.0), &emergencyVehicleAlert::SetMaxSpeed, this);
-//       }
-//       else
-//       {
-//         m_client->TraCIAPI::vehicle.changeLane (m_id,0,3);
-//         m_client->TraCIAPI::vehicle.setMaxSpeed (m_id, m_max_speed*1.5);
-//         libsumo::TraCIColor green;
-//         green.r=0;green.g=128;green.b=80;green.a=255;
-//         m_client->TraCIAPI::vehicle.setColor (m_id,green);
-//
-//         Simulator::Remove(m_speed_ev);
-//         m_speed_ev = Simulator::Schedule (Seconds (3.0), &emergencyVehicleAlert::SetMaxSpeed, this);
-//       }
-//     }
-//   }
-//
-//   if (!m_csv_name.empty ())
-//     {
-//       // messageId,camId,timestamp,latitude,longitude,heading,speed,acceleration
-//       m_csv_ofstream_cam << cam->header.messageId << "," << cam->header.stationId << ",";
-//       m_csv_ofstream_cam << cam->cam.generationDeltaTime << "," << asn1cpp::getField(cam->cam.camParameters.basicContainer.referencePosition.latitude,double)/DOT_ONE_MICRO << ",";
-//       m_csv_ofstream_cam << asn1cpp::getField(cam->cam.camParameters.basicContainer.referencePosition.longitude,double)/DOT_ONE_MICRO << "," ;
-//       m_csv_ofstream_cam << asn1cpp::getField(cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.heading.headingValue,double)/DECI << "," << asn1cpp::getField(cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.speed.speedValue,double)/CENTI << ",";
-//       m_csv_ofstream_cam << asn1cpp::getField(cam->cam.camParameters.highFrequencyContainer.choice.basicVehicleContainerHighFrequency.longitudinalAcceleration.value,double)/DECI << std::endl;
-//     }
-
   }
 
-  void
-  emergencyVehicleAlert::receiveCPMV1 (asn1cpp::Seq<CPMV1> cpm, Address from)
-  {
-    /* Implement CPM strategy here */
-    m_cpm_received++;
-    (void) from;
-    std::cout << "["<< Simulator::Now ().GetSeconds ()<<"] " << m_id <<" received a new CPMv1 from vehicle " << asn1cpp::getField(cpm->header.stationId,long) <<" with "<< asn1cpp::getField(cpm->cpm.cpmParameters.numberOfPerceivedObjects,long)<< " perceived objects." <<std::endl;
-    //For every PO inside the CPM, if any
-    bool POs_ok;
-    auto PObjects = asn1cpp::getSeqOpt(cpm->cpm.cpmParameters.perceivedObjectContainer,PerceivedObjectContainer,&POs_ok);
-    if (POs_ok)
-      {
-        int PObjects_size = asn1cpp::sequenceof::getSize(cpm->cpm.cpmParameters.perceivedObjectContainer);
-        for(int i=0; i<PObjects_size;i++)
-          {
-            LDM::returnedVehicleData_t PO_data;
-            auto PO_seq = asn1cpp::makeSeq(PerceivedObjectV1);
-            PO_seq = asn1cpp::sequenceof::getSeq(cpm->cpm.cpmParameters.perceivedObjectContainer,PerceivedObjectV1,i);
-            //If PO is already in local copy of vLDM
-            if(m_LDM->lookup(asn1cpp::getField(PO_seq->objectID,long),PO_data) == LDM::LDM_OK)
-              {
-                  //Add the new perception to the LDM
-                  std::vector<long> associatedCVs = PO_data.vehData.associatedCVs.getData ();
-                  if(std::find(associatedCVs.begin(), associatedCVs.end (), asn1cpp::getField(cpm->header.stationId,long)) == associatedCVs.end ())
-                    associatedCVs.push_back (asn1cpp::getField(cpm->header.stationId,long));
-                  PO_data.vehData.associatedCVs = OptionalDataItem<std::vector<long>>(associatedCVs);
-                  m_LDM->insert (PO_data.vehData);
-              }
-            else
-              {
-               //Translate CPM data to LDM format
-               m_LDM->insert(translateCPMV1data(cpm,i));
-              }
-          }
-      }
-  }
-
-  vehicleData_t
-  emergencyVehicleAlert::translateCPMV1data (asn1cpp::Seq<CPMV1> cpm, int objectIndex)
-  {
-    vehicleData_t retval;
-    auto PO_seq = asn1cpp::makeSeq(PerceivedObjectV1);
-    using namespace boost::geometry::strategy::transform;
-    PO_seq = asn1cpp::sequenceof::getSeq(cpm->cpm.cpmParameters.perceivedObjectContainer,PerceivedObjectV1,objectIndex);
-    retval.detected = true;
-    retval.stationID = asn1cpp::getField(PO_seq->objectID,long);
-    retval.ID = std::to_string(retval.stationID);
-    retval.vehicleLength = asn1cpp::getField(PO_seq->planarObjectDimension1->value,long);
-    retval.vehicleWidth = asn1cpp::getField(PO_seq->planarObjectDimension2->value,long);
-    retval.heading = asn1cpp::getField(cpm->cpm.cpmParameters.stationDataContainer->choice.originatingVehicleContainer.heading.headingValue,double)/10 +
-                        asn1cpp::getField(PO_seq->yawAngle->value,double)/10;
-    if (retval.heading > 360.0)
-      retval.heading -= 360.0;
-
-    retval.speed_ms = (double) (asn1cpp::getField(cpm->cpm.cpmParameters.stationDataContainer->choice.originatingVehicleContainer.speed.speedValue,long) +
-                        asn1cpp::getField(PO_seq->xSpeed.value,long))/CENTI;
-
-    double fromLon = asn1cpp::getField(cpm->cpm.cpmParameters.managementContainer.referencePosition.longitude,double)/DOT_ONE_MICRO;
-    double fromLat = asn1cpp::getField(cpm->cpm.cpmParameters.managementContainer.referencePosition.latitude,double)/DOT_ONE_MICRO;
-
-
-    libsumo::TraCIPosition objectPosition = m_client->TraCIAPI::simulation.convertLonLattoXY (fromLon,fromLat);
-
-    point_type objPoint(asn1cpp::getField(PO_seq->xDistance.value,double)/CENTI,asn1cpp::getField(PO_seq->yDistance.value,double)/CENTI);
-    double fromAngle = asn1cpp::getField(cpm->cpm.cpmParameters.stationDataContainer->choice.originatingVehicleContainer.heading.headingValue,double)/10;
-    rotate_transformer<boost::geometry::degree, double, 2, 2> rotate(fromAngle-90);
-    boost::geometry::transform(objPoint, objPoint, rotate);// Transform points to the reference (x,y) axises
-    objectPosition.x += boost::geometry::get<0>(objPoint);
-    objectPosition.y += boost::geometry::get<1>(objPoint);
-
-    libsumo::TraCIPosition objectPosition2 = objectPosition;
-    objectPosition = m_client->TraCIAPI::simulation.convertXYtoLonLat (objectPosition.x,objectPosition.y);
-
-    retval.lon = objectPosition.x;
-    retval.lat = objectPosition.y;
-
-    point_type speedPoint(asn1cpp::getField(PO_seq->xSpeed.value,double)/CENTI,asn1cpp::getField(PO_seq->ySpeed.value,double)/CENTI);
-    boost::geometry::transform(speedPoint, speedPoint, rotate);// Transform points to the reference (x,y) axises
-    retval.speed_ms = asn1cpp::getField(cpm->cpm.cpmParameters.stationDataContainer->choice.originatingVehicleContainer.speed.speedValue,double)/CENTI + boost::geometry::get<0>(speedPoint);
-
-    retval.camTimestamp = asn1cpp::getField(cpm->cpm.generationDeltaTime,long);
-    retval.timestamp_us = Simulator::Now().GetMicroSeconds () - (asn1cpp::getField(PO_seq->timeOfMeasurement,long)*1000);
-    retval.stationType = StationType_passengerCar;
-    retval.perceivedBy.setData(asn1cpp::getField(cpm->header.stationId,long));
-    retval.confidence = asn1cpp::getField(PO_seq->objectConfidence,long);
-    return retval;
-
-  }
-
-  void
-  emergencyVehicleAlert::receiveDENM (denData denm, Address from)
-  {
-    /* This is just a sample dummy receiveDENM function. The user can customize it to parse the content of a DENM when it is received. */
-    (void) denm; // Contains the data received from the DENM
-    (void) from; // Contains the address from which the DENM has been received
-    std::cout<<"Received a new DENM."<<std::endl;
-  }
-
-  void
-  emergencyVehicleAlert::SetMaxSpeed ()
-  {
-    libsumo::TraCIColor normal;
-    normal.r=0;normal.g=225;normal.b=255;normal.a=255;
-    m_client->TraCIAPI::vehicle.setColor (m_id, normal);
-    m_client->TraCIAPI::vehicle.setMaxSpeed (m_id, m_max_speed);
-  }
   void
   emergencyVehicleAlert::receiveCPM (asn1cpp::Seq<CollectivePerceptionMessage> cpm, Address from)
   {
@@ -560,6 +415,7 @@ namespace ns3
         }
       }
   }
+
   vehicleData_t
   emergencyVehicleAlert::translateCPMdata (asn1cpp::Seq<CollectivePerceptionMessage> cpm,
                                            asn1cpp::Seq<PerceivedObject> object, int objectIndex)

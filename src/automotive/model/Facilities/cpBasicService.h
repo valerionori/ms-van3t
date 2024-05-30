@@ -92,6 +92,11 @@ public:
   void receiveCpm(BTPDataIndication_t dataIndication, Address from);
   void changeNGenCpmMax(int16_t N_GenCpmMax) {m_N_GenCpmMax=N_GenCpmMax;}
   /**
+   * @VALERIO @MATTIA
+   * @brief Set the generation period of CPMs.
+   */
+  void changeTGenCpm(int16_t N_GenCpm) {m_N_GenCpm = N_GenCpm;}
+  /**
    * @brief Set the callback function to be used for the processing of received CPMs.
    * @param rx_callback  The callback function to be set.
    */
@@ -118,7 +123,7 @@ public:
    * False --> The inclusion rules defined in ETSI TS 103 324 V2.1.1 (2023-06) are not applied
    * @param choice
    */
-  void setRedundancyMitigation(bool choice){m_redundancy_mitigation = choice;}
+  void enableRedundancyMitigation(bool choice){m_redundancy_mitigation = choice;}
   void disableRedundancyMitigation(){m_redundancy_mitigation = false;}
 
   void setCheckCpmGenMs(long nextCPM) {m_N_GenCpm=nextCPM;};
@@ -190,6 +195,11 @@ private:
   // ns-3 event IDs used to properly stop the simulation with terminateDissemination()
   EventId m_event_cpmDisseminationStart;
   EventId m_event_cpmSend;
+
+  bool SensorInfoContainerIncluded; //!< @VALERIO check if the Sensor Information Container is included in the CPM
+
+  std::string m_csv_name_trace; //!< @VALERIO @MATTIA CSV file name for CPM traces
+  std::ofstream m_csv_ofstream_trace; //!< @VALERIO @MATTIA CSV log stream (CPM), created using m_csv_name_trace
 };
 }
 #endif // CPBASICSERVICE_H
