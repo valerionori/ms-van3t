@@ -118,9 +118,14 @@ namespace ns3
         /* @VALERIO, @MATTIA -> Added Attributes for new parameters */
         .AddAttribute ("RedundancyMitigation",
                        "To enable the Redundancy Mitigation Rules defined by ETSI fro CPMs",
-                       StringValue (),
+                       BooleanValue (),
                        MakeBooleanAccessor (&emergencyVehicleAlert::m_redundancy_mitigation),
                        MakeBooleanChecker ())
+        .AddAttribute ("VoIComputationMethod",
+                       "To enable the Redundancy Mitigation Rules defined by ETSI fro CPMs",
+                       StringValue (),
+                       MakeStringAccessor (&emergencyVehicleAlert::m_VoIcomputationMethod),
+                       MakeStringChecker ())
         .AddAttribute ("AreaOfRelevance",
                        "To set Area of Relevance (AoR) radius",
                        DoubleValue (),
@@ -152,6 +157,7 @@ namespace ns3
     m_heading_threshold = 45; // Max heading angle difference between the normal vehicles and the emergency vehicle, that triggers a reaction in the normal vehicles
 
     m_redundancy_mitigation = true; // @VALERIO
+    m_VoIcomputationMethod = "ETSI"; // @VALERIO
     m_T_GenCpm = 100; // @VALERIO, @MATTIA
   }
 
@@ -191,6 +197,8 @@ namespace ns3
     m_LDM->setTraCIclient(m_client);
     m_LDM->setVDP(traci_vdp);
     m_LDM->setAreaOfRelevance(m_AoR_radius); // @VALERIO
+    if(m_redundancy_mitigation && m_VoIcomputationMethod != "ETSI")
+      m_LDM->enable_RDM(true);
 
     m_sensor = CreateObject<SUMOSensor>();
     m_sensor->setStationID(m_id);
@@ -287,7 +295,8 @@ namespace ns3
     m_cpService.addCPRxCallback ([this](auto && PH1, auto && PH2) { receiveCPM(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
     m_cpService.setRealTime (m_real_time);
     m_cpService.setTraCIclient (m_client);
-    m_cpService.enableRedundancyMitigation(true); // @VALERIO
+    m_cpService.enableRedundancyMitigation(m_redundancy_mitigation); // @VALERIO
+    m_cpService.setRedundancyMitigation(m_VoIcomputationMethod); // @VALERIO
     m_cpService.changeTGenCpm(m_T_GenCpm); // @VALERIO
 
     /* Set TraCI VDP for GeoNet object */

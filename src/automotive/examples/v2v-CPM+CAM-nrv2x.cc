@@ -169,29 +169,26 @@ computeAwarenessRatio (Ptr<TraciClient> sumoClient, double AoR_radius)
     }
 
     /* Compare the two arrays on the terminal */
-    if (true)
-    {
-      std::sort(AoR.begin (), AoR.end ());
-      std::sort(AoR_K.begin (), AoR_K.end ());
-
-      std::cout << i << " AoR Evaluation:" << std::endl;
-
-      std::cout << "TRACI: ";
-
-      for (const auto& element : AoR) {
-        std::cout << element << " ";
-      }
-
-      std::cout << std::endl;
-
-      std::cout << "KNOWN: ";
-
-      for (const auto& element_known : AoR_K) {
-        std::cout << element_known << " ";
-      }
-
-      std::cout << std::endl;
-    }
+//    std::sort(AoR.begin (), AoR.end ());
+//    std::sort(AoR_K.begin (), AoR_K.end ());
+//
+//    std::cout << i << " AoR Evaluation:" << std::endl;
+//
+//    std::cout << "TRACI: ";
+//
+//    for (const auto& element : AoR) {
+//      std::cout << element << " ";
+//    }
+//
+//    std::cout << std::endl;
+//
+//    std::cout << "KNOWN: ";
+//
+//    for (const auto& element_known : AoR_K) {
+//      std::cout << element_known << " ";
+//    }
+//
+//    std::cout << std::endl;
 
     /* Initialize the variables */
     double EAR;
@@ -266,8 +263,23 @@ main (int argc, char *argv[])
   //Sidelink bearers activation time
   Time slBearersActivationTime = Seconds (2.0);
 
-  double AoR_radius = 250; // @VALERIO -> Area of Relevance (AoR) radius
-  bool redundancyMitigation; // @VALERIO -> set the Redundancy Mitigation Rule to be applied
+  // @VALERIO -> Area of Relevance (AoR) radius
+  double AoR_radius = 250;
+
+  /**
+   * @VALERIO
+   *
+   * VoIcomputationMethod:  Value of Information computation methods as defined in ETSI TS 103 324 V2.1.1 (2023-06) Annex E.
+   * Values:
+   *    - "ETSI" (ETSI TS 103 324 V2.1.1 Section 6.1.2.3, default)
+   *    - "frequency-based"
+   *    - "dynamics-based"
+   *    - "distance-based"
+   *    - "object self-announcement"
+   */
+  bool redundancyMitigation = true; // ObjectInclusionConfig as defined in ETSI TS 103 324 V2.1.1 (2023-06)
+  std::string VoIcomputationMethod = "ETSI";
+
   int16_t T_GenCpm = 100; // @VALERIO, @MATTIA -> set the CPM Generation Period to be applied
 
 
@@ -395,8 +407,11 @@ main (int argc, char *argv[])
                 "Set the radius of the Area of Relevance (AoR) in meters",
                 AoR_radius);
   cmd.AddValue ("RedundancyMitigation",
-                "Enable the Redundancy Mitigation Rules defined by ETSI fro CPMs",
+                "Enable the Redundancy Mitigation Rules defined by ETSI for CPMs",
                 redundancyMitigation);
+  cmd.AddValue ("VoIComputationMethod",
+                "Set the method to compute Value of Information for Perceived Objects (CPM)",
+                VoIcomputationMethod);
   cmd.AddValue ("CPMGenerationPeriod",
                 "Set the CPM Generation Period",
                 T_GenCpm);
@@ -857,6 +872,7 @@ main (int argc, char *argv[])
   /* @VALERIO, @MATTIA -> Added Attributes for new parameters */
   EmergencyVehicleAlertHelper.SetAttribute ("AreaOfRelevance", DoubleValue(AoR_radius));
   EmergencyVehicleAlertHelper.SetAttribute ("RedundancyMitigation", BooleanValue(redundancyMitigation));
+  EmergencyVehicleAlertHelper.SetAttribute ("VoIComputationMethod", StringValue(VoIcomputationMethod));
   EmergencyVehicleAlertHelper.SetAttribute ("CPMGenerationPeriod", IntegerValue(T_GenCpm));
 
   /* callback function for node creation */
@@ -990,8 +1006,23 @@ main (int argc, char *argv[])
     csv_ofstream_ear << numberOfNodes << "," << redundancyMitigation << "," << penetrationRate << "," << T_GenCpm << "," << Average_EAR << std::endl;
 
     std::cout << "Average EAR: " << Average_EAR << std::endl;
-  }
 
+    /** @VALERIO Packet Size data processing */
+    std::ofstream csv_ofstream_packetsize;
+    std::string csv_name_packetsize = "Results/Traces/Average_PacketSize.csv";
+
+    if(access(csv_name_packetsize.c_str(),F_OK)!=-1)
+    {
+      // The file already exists
+      csv_ofstream_packetsize.open(csv_name_packetsize,std::ofstream::out | std::ofstream::app);
+    }
+    else
+    {
+      // The file does not exist yet
+      csv_ofstream_packetsize.open(csv_name_packetsize);
+      csv_ofstream_packetsize << "numberOfUEs,RMR,MPR,T_Cpm_Gen,Average CPM Packet Size (bytes)" << std::endl;
+    }
+  }
 
   return 0;
 }

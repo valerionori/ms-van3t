@@ -229,6 +229,37 @@ public:
 
     libsumo::TraCIPosition boost2TraciPos(point_type point_type);
 
+    /**
+     * @VALERIO
+     * @brief This method enable the use of Redundancy Dynamic Map in case of VoI computation method are employed
+     * @param enableRDM
+     */
+    void enable_RDM(bool enableRDM){m_enableRDM = enableRDM;}
+
+    /**
+    * @VALERIO
+    *
+    * Define an auxiliary map called Redundancy Dynamic Map (RDM).
+    * The Key is the stationID of the PO and the value is a data struct.
+    * It contains only Objects perceived from received CPMs (thus, not by local sensors).
+    *
+    * This map is related to the methods to compute Value of Information for Perceived Objects (CPM) and handles
+    * the W_InclusionRateControl
+    */
+    typedef struct {
+        int64_t timestamp;   //! First time the Object has been perceived (within the Time Window)
+        long counter;        //! How many times the Object has been perceived (within the Time Window)
+        double speed;        //! Speed of the Object from the last received CPM
+        double latitude;     //! Latitude of the Object from the last received CPM
+        double longitude;    //! Longitude of the Object from the last received CPM
+        double distance;     //! Farthest ITS-S which perceived the Object
+        long CPM_sent;       //! How many CPMs are received by the Object (only if the Object is an ITS-S)
+    } redundancyMitigation_t;
+
+    std::unordered_map<uint64_t,redundancyMitigation_t> m_RDM;
+
+    bool m_enableRDM; //!< @VALERIO enable the RDM only if VoI computation methods are used
+
 private:
 
 	// Main database structure
@@ -250,22 +281,22 @@ private:
         EventId m_event_deleteOlderThan;
         EventId m_event_writeContents;
         EventId m_event_updatePolygons;
-        EventId m_event_checkAreaOfRelevance; // @VALERIO
+        EventId m_event_checkAreaOfRelevance; //! @VALERIO
 
 	double m_avg_dwell = 0.0;
 	int m_dwell_count = 0;
   StationType_t m_station_type;
 
-  // @VALERIO -> Vector to store AoR values
-  std::vector<std::string> m_AoR;
+  std::vector<std::string> m_AoR; //! @VALERIO vector to store AoR values
+  double AoR_radius; //! @VALERIO AoR radius in meters
 
-  // @VALERIO -> AoR radius in meters
-  double AoR_radius;
+  std::string m_csv_name_aor; //!< @VALERIO CSV file name for AoR measurements
+  std::ofstream m_csv_ofstream_aor; //!< @VALERIO CSV log stream, created using m_csv_name_aor
 
-  // @VALERIO -> CSV files for EAR measurements
-  std::string m_csv_name_aor;
-  std::ofstream m_csv_ofstream_aor;
+  std::string m_csv_name_rdm; //!< @VALERIO CSV file name for RDM
+  std::ofstream m_csv_ofstream_rdm; //!< @VALERIO CSV log stream, created using m_csv_name_rdm
 
+  const int64_t W_InclusionRateControl = 2000; //!< @VALERIO W_InclusionRateControl as defined in ETSI TS 103 324 V2.1.1 (2023-06) Annex F
 
 };
 }

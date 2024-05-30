@@ -81,12 +81,16 @@ namespace ns3 {
     double desync = ((double)std::rand()/RAND_MAX);
     m_event_writeContents = Simulator::Schedule(MilliSeconds(LOG_FREQ+(desync*100)),&LDM::writeAllContents,this);
 
-    /* @VALERIO -> AoR check scheduling */
+    /* @VALERIO -> Schedule AoR check */
     m_event_checkAreaOfRelevance = Simulator::Schedule(MilliSeconds(LOG_FREQ+(desync*100)),&LDM::checkAreaOfRelevance,this);
 
     /* @VALERIO -> AoR Initialization */
     AoR_radius = 250;
     m_AoR = std::vector<std::string> ();
+
+    /* @VALERIO -> Redundancy Mitigation Map Initialization */
+    m_enableRDM = false;
+    m_RDM = std::unordered_map<uint64_t,redundancyMitigation_t> ();
   }
 
   LDM::~LDM() {
@@ -119,6 +123,142 @@ namespace ns3 {
         it->second.vehData = newVehicleData;
         it->second.phData.insert (newVehicleData,m_stationID);
         retval = LDM_UPDATED;
+    }
+
+ /**
+ * @VALERIO
+ *
+ * The following lines will properly fill the RDM (Redundancy Dynamic Map) which will be used to implement
+ * Value of Information (VoI) computation methods as specified in ETSI TS 103 324 V2.1.1 (2023-06) Annex E
+ */
+    if (m_enableRDM)
+    {
+      /* Check if the Object is perceived from a received CPM (not by local sensors) */
+      if(newVehicleData.perceivedBy.getData() != long(m_stationID))
+      {
+        /* If the Object is not in the RDM, insert the Object with initialized values */
+        auto iterator = m_RDM.find(newVehicleData.stationID);
+        if(iterator == m_RDM.end ())
+        {
+          /* Information about the perceived Object */
+          redundancyMitigation_t redundancyMitigationObject;
+          redundancyMitigationObject.counter = 1;
+          redundancyMitigationObject.timestamp = Simulator::Now ().GetMicroSeconds ();
+          redundancyMitigationObject.latitude = newVehicleData.lat;
+          redundancyMitigationObject.longitude = newVehicleData.lon;
+          redundancyMitigationObject.speed = newVehicleData.speed_ms;
+
+          if (newVehicleData.perceivedBy.isAvailable())
+          {
+            /* Extract the positions of the current ITS-S and of the ITS-S which sent the CPM from TraCI Client */
+            libsumo::TraCIPosition egoPosXY = m_client->TraCIAPI::vehicle.getPosition(m_id);
+            std::string pID = "veh" + std::to_string(newVehicleData.perceivedBy.getData());
+            libsumo::TraCIPosition PosXY = m_client->TraCIAPI::vehicle.getPosition(pID);
+            redundancyMitigationObject.distance = sqrt(pow((egoPosXY.x-PosXY.x),2) + pow((egoPosXY.y-PosXY.y),2));
+          }
+          else
+            redundancyMitigationObject.distance = 0;
+
+          redundancyMitigationObject.CPM_sent = 0;
+
+          m_RDM.insert(std::make_pair(newVehicleData.stationID, redundancyMitigationObject));
+
+        }
+        else
+        {
+          /* If the Object is already in the RDM, find iterator to update its values */
+          for(iterator = m_RDM.begin (); iterator != m_RDM.end (); ++iterator)
+          {
+            if(iterator->first == newVehicleData.stationID) // Find the Object in the RDM
+            {
+              /* If the Object AoI is greater than W_InclusionRateControl, initialize all the values of the Object */
+              if((Simulator::Now ().GetMicroSeconds () - iterator->second.timestamp) >= (W_InclusionRateControl * 1000))
+              {
+                m_RDM[newVehicleData.stationID].counter = 1;
+                m_RDM[newVehicleData.stationID].timestamp = Simulator::Now ().GetMicroSeconds ();
+                m_RDM[newVehicleData.stationID].latitude = newVehicleData.lat;
+                m_RDM[newVehicleData.stationID].longitude = newVehicleData.lon;
+                m_RDM[newVehicleData.stationID].speed = newVehicleData.speed_ms;
+                if (newVehicleData.perceivedBy.isAvailable())
+                {
+                  /* Extract the positions of the current ITS-S and of the ITS-S which sent the CPM from TraCI Client */
+                  libsumo::TraCIPosition egoPosXY = m_client->TraCIAPI::vehicle.getPosition(m_id);
+                  std::string pID = "veh" + std::to_string(newVehicleData.perceivedBy.getData());
+                  libsumo::TraCIPosition PosXY = m_client->TraCIAPI::vehicle.getPosition(pID);
+                  m_RDM[newVehicleData.stationID].distance = sqrt(pow((egoPosXY.x-PosXY.x),2) + pow((egoPosXY.y-PosXY.y),2));
+                }
+                else
+                  m_RDM[newVehicleData.stationID].distance = 0;
+
+                m_RDM[newVehicleData.stationID].CPM_sent = 0;
+              }
+              else
+              {
+                // Do not update the timestamp
+                // Update the counter
+                m_RDM[newVehicleData.stationID].counter++;
+                m_RDM[newVehicleData.stationID].latitude = newVehicleData.lat;
+                m_RDM[newVehicleData.stationID].longitude = newVehicleData.lon;
+                m_RDM[newVehicleData.stationID].speed = newVehicleData.speed_ms;
+                /* If the Object is perceived by a farther ITS-S, update the distance */
+                if (newVehicleData.perceivedBy.isAvailable())
+                {
+                  /* Extract the positions of the current ITS-S and of the ITS-S which sent the CPM from TraCI Client */
+                  libsumo::TraCIPosition egoPosXY = m_client->TraCIAPI::vehicle.getPosition(m_id);
+                  std::string pID = "veh" + std::to_string(newVehicleData.perceivedBy.getData());
+                  libsumo::TraCIPosition PosXY = m_client->TraCIAPI::vehicle.getPosition(pID);
+                  if(m_RDM[newVehicleData.stationID].distance <= sqrt(pow((egoPosXY.x-PosXY.x),2) + pow((egoPosXY.y-PosXY.y),2)))
+                    m_RDM[newVehicleData.stationID].distance = sqrt(pow((egoPosXY.x-PosXY.x),2) + pow((egoPosXY.y-PosXY.y),2));
+                }
+              }
+            }
+          }
+        }
+
+        /* If data about the ITS-S which perceived the Object is not in the RDM, insert it */
+        auto ir = m_RDM.find(uint64_t(newVehicleData.perceivedBy.getData()));
+        if(ir == m_RDM.end ())
+        {
+          /* Information about the ITS-S which perceived the Object */
+          redundancyMitigation_t redundancyMitigationSender;
+          redundancyMitigationSender.counter = 0;
+          redundancyMitigationSender.timestamp = 0;
+          redundancyMitigationSender.distance = 0;
+          redundancyMitigationSender.latitude = 0;
+          redundancyMitigationSender.longitude = 0;
+          redundancyMitigationSender.speed = 0;
+          redundancyMitigationSender.CPM_sent = 1;
+
+          m_RDM.insert(std::make_pair(uint64_t(newVehicleData.perceivedBy.getData()), redundancyMitigationSender));
+        }
+        else
+        {
+          /* If data about the ITS-S which perceived the Object are already in the RDM, update its CPM counter */
+          m_RDM[newVehicleData.perceivedBy.getData()].CPM_sent++;
+        }
+
+        /* Fill the CSV file */
+        m_csv_name_rdm = "Results/RDM/RDM-" + m_id + ".csv";
+        std::ifstream m_csv_ifstream_rdm(m_csv_name_rdm);
+        m_csv_ofstream_rdm.open(m_csv_name_rdm, std::ofstream::app);
+        if (!m_csv_ifstream_rdm.is_open())
+          m_csv_ofstream_rdm << "ObjectID,timestamp,first_detection,PerceivedBy,Counter,Latitude,Longitude,Speed,Sender ITS-S Distance,CPM Sent" << std::endl;
+        if(newVehicleData.perceivedBy.isAvailable())
+        {
+          m_csv_ofstream_rdm.open(m_csv_name_rdm, std::ofstream::app);
+          m_csv_ofstream_rdm << newVehicleData.stationID << ","
+                             << Simulator::Now ().GetMicroSeconds () << ","
+                             << m_RDM[newVehicleData.stationID].timestamp << ","
+                             << newVehicleData.perceivedBy.getData() << ","
+                             << m_RDM[newVehicleData.stationID].counter << ","
+                             << m_RDM[newVehicleData.stationID].latitude << ","
+                             << m_RDM[newVehicleData.stationID].longitude << ","
+                             << m_RDM[newVehicleData.stationID].speed << ","
+                             << m_RDM[newVehicleData.stationID].distance << ","
+                             << m_RDM[newVehicleData.stationID].CPM_sent << ","
+                             << std::endl;
+        }
+      }
     }
     return retval;
   }

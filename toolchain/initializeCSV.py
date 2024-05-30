@@ -36,6 +36,7 @@ def csv_paths_initialization(ns3_path, results_path, seed):
     os.makedirs("AoR")
     os.makedirs("EAR")
     os.makedirs("CBR")
+    os.makedirs("RDM")
 
 
 def csv_ear_initialization(results_path, numberOfUEs, redundancy, penetrationRate, cpm_gen_period):
@@ -51,15 +52,6 @@ def csv_ear_initialization(results_path, numberOfUEs, redundancy, penetrationRat
                       str(cpm_gen_period) + '/' + filename)
 
 
-def csv_cbr_initialization(results_path, numberOfUEs, redundancy, penetrationRate, cpm_gen_period):
-
-    os.chdir(results_path + "/CBR")
-
-    # Move CSV files into proper directory
-    os.makedirs((str(numberOfUEs) + '/' + str(redundancy) + '/' + str(penetrationRate) + '/' + str(cpm_gen_period)))
-    os.rename('CBR.csv', (str(numberOfUEs) + '/' + str(redundancy) + '/' + str(penetrationRate) + '/' + str(cpm_gen_period)) + '/CBR.csv')
-
-
 def csv_packet_size_initialization(results_path, numberOfUEs, redundancy, penetrationRate, cpm_gen_period):
 
     os.chdir(results_path + "/Traces")
@@ -67,7 +59,7 @@ def csv_packet_size_initialization(results_path, numberOfUEs, redundancy, penetr
     # Generate a new CSV to store the Average for each scenario
     try:
         file = open("Average_PacketSize.csv", "x")
-        file.write("Scenario,Redundancy Mitigation,Average Packet Size (bytes)\n")
+        file.write("Scenario,Redundancy Mitigation,AveragePacketSize (bytes)\n")
         file.close()
     except FileExistsError:
         print("CSV Update.")
@@ -77,4 +69,5 @@ def csv_packet_size_initialization(results_path, numberOfUEs, redundancy, penetr
     for i in range(1, numberOfUEs + 1):
         filename = 'Trace-veh' + str(i) + '.csv'
         if os.path.exists(filename):
-            os.rename(filename, str(numberOfUEs) + '/' + str(redundancy) + '/' + str(penetrationRate) + '/' + str(cpm_gen_period) + '/' + filename)
+            os.rename(filename, str(numberOfUEs) + '/' + str(redundancy) + '/' + str(penetrationRate) + '/' +
+                      str(cpm_gen_period) + '/' + filename)

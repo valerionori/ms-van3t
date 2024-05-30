@@ -36,9 +36,9 @@ namespace ns3 {
   {
     m_station_id = ULONG_MAX;
     m_stationtype = LONG_MAX;
-    m_socket_tx=NULL;
-    m_btp = NULL;
-    m_LDM = NULL;
+    m_socket_tx=nullptr;
+    m_btp = nullptr;
+    m_LDM = nullptr;
     m_real_time=false;
 
     // Setting a default value of m_T_CheckCpmGen_ms equal to 100 ms (i.e. T_GenCpmMin_ms)
@@ -63,6 +63,20 @@ namespace ns3 {
     m_redundancy_mitigation = true;
 
     m_cpm_sent=0;
+
+    /* @VALERIO -> Initialize VoI computation method parameters */
+    m_voi_computation_method = "ETSI"; // Default
+    N_InclusionRateControl_Counter = 0;
+
+    VoI = 1; // General value for frequency-based RMR, in other RMR is dynamically updated)
+    VoI_Position = 0; // Specific value for dynamics-based VoI computation method
+    VoI_Speed = 0; // Specific value for dynamics-based VoI computation method
+
+    VoI_Threshold_Frequency = 0.5;
+    VoI_Threshold_Dynamics_Position = 4.0;
+    VoI_Threshold_Dynamics_Speed = 0.5;
+    VoI_Threshold_Distance = 6;
+    VoI_Threshold_ObjectSelfAnnouncement = 0.5;
   }
 
   void
@@ -150,7 +164,157 @@ namespace ns3 {
         if(PO_data->vehData.lastCPMincluded.getData() < ((computeTimestampUInt64 ()/NANO_TO_MILLI)-m_N_GenCpmMax))
           return true;
       }
+
+    std::cout << "Object not included due to ETSI redundancy mitigation rules" << std::endl; // @VALERIO
     return false;
+  }
+  bool
+  CPBasicService::checkValueOfInformation(std::vector<LDM::returnedVehicleData_t>::iterator PO_data, std::string m_voi_computation_method)
+  {
+    /* Frequency-based */
+    if (m_voi_computation_method == "frequency-based")
+    {
+      std::vector<LDM::returnedVehicleData_t> LDM_POs;
+      if (m_LDM->getAllPOs (LDM_POs)) // If there are any POs in the LDM
+      {
+        /* Scan the RDM to find how many times the Object has been perceived within the Time Window */
+        //std::unordered_map<uint64_t, LDM::redundancyMitigation_t>::iterator it;
+        //for (it = m_LDM->m_RDM.begin (); it != m_LDM->m_RDM.end (); it++)
+        for (auto it:m_LDM->m_RDM)
+        {
+          if (it.first == PO_data->vehData.stationID)
+            VoI = double (1) / double (it.second.counter);
+        }
+
+        if (N_InclusionRateControl_Counter >
+            N_InclusionRateControl) // If the Object has NOT been included more than N_InclusionRateControl times...
+        {
+          N_InclusionRateControl_Counter = 0; //...reset the counters...
+          return true; //redundancyMitigation...and include the Object
+        }
+
+        if (VoI >
+            VoI_Threshold_Frequency) //if the VoI of the Object is higher than the threshold...
+        {
+          N_InclusionRateControl_Counter = 0; //...reset the counters..
+          return true; //...and include the object
+        }
+      }
+
+      std::cout << "Object not included due to Frequency-based RMR" << std::endl;
+      N_InclusionRateControl_Counter++;
+      return false;
+    }
+
+    /* Dynamics-based */
+    if (m_voi_computation_method == "dynamics-based")
+    {
+      std::vector<LDM::returnedVehicleData_t> LDM_POs;
+      if (m_LDM->getAllPOs (LDM_POs)) // If there are any POs in the LDM
+      {
+        /* Scan the RDM to find how many times the Object has been perceived within the Time Window */
+        std::unordered_map<uint64_t, LDM::redundancyMitigation_t>::iterator it;
+        for (it = m_LDM->m_RDM.begin (); it != m_LDM->m_RDM.end (); it++)
+        {
+          if (it->first == PO_data->vehData.stationID)
+          {
+            VoI_Position = m_vdp->getCartesianDist (it->second.longitude,it->second.latitude,PO_data->vehData.lon,PO_data->vehData.lat);
+            VoI_Speed = PO_data->vehData.speed_ms - it->second.speed;
+          }
+        }
+
+        if (N_InclusionRateControl_Counter >
+            N_InclusionRateControl) // If the Object has NOT been included more than N_InclusionRateControl times...
+        {
+          N_InclusionRateControl_Counter = 0; //...reset the counters...
+          return true; //redundancyMitigation...and include the Object
+        }
+
+        if (VoI > VoI_Threshold_Dynamics_Position || VoI > VoI_Threshold_Dynamics_Speed) //if the VoI of the Object is higher than the threshold...
+        {
+          N_InclusionRateControl_Counter = 0; //...reset the counters..
+          return true; //...and include the object
+        }
+      }
+
+      std::cout << "Object not included due to Dynamics-based RMR" << std::endl;
+      N_InclusionRateControl_Counter++;
+      return false;
+    }
+
+    /* Distance-based */
+    if (m_voi_computation_method == "distance-based")
+    {
+      if (m_LDM != nullptr)
+      {
+        std::vector<LDM::returnedVehicleData_t> LDM_POs;
+        if (m_LDM->getAllPOs (LDM_POs)) // If there are any POs in the LDM
+        {
+          /* Scan the RDM to find the farthest ITS-S which perceived this Object within the Time Window */
+          std::unordered_map<uint64_t, LDM::redundancyMitigation_t>::iterator it;
+          for (it = m_LDM->m_RDM.begin (); it != m_LDM->m_RDM.end (); it++)
+          {
+            if (it->first == PO_data->vehData.stationID)
+              VoI = it->second.distance;
+          }
+
+          if (N_InclusionRateControl_Counter > N_InclusionRateControl)
+          {
+            N_InclusionRateControl_Counter = 0;
+            return true;
+          }
+
+          if (VoI > VoI_Threshold_Distance)
+          {
+            N_InclusionRateControl_Counter = 0;
+            return true;
+          }
+        }
+      }
+
+      std::cout << "Object not included due to Distance-based RMR" << std::endl;
+      N_InclusionRateControl_Counter++;
+      return false;
+    }
+
+
+    /* Object Self-Announcement */
+    if (m_voi_computation_method == "object-self-announcement")
+    {
+      if (m_LDM != nullptr)
+      {
+        std::vector<LDM::returnedVehicleData_t> LDM_POs;
+        if (m_LDM->getAllPOs (LDM_POs)) // If there are any POs in the LDM [LDM.cc:175]
+        {
+          /* Scan the map to find how many times the Object has been updated (i.e., how many times it ahs been received) */
+          std::unordered_map<uint64_t, LDM::redundancyMitigation_t>::iterator it;
+          for (it = m_LDM->m_RDM.begin (); it != m_LDM->m_RDM.end (); it++)
+          {
+            if (it->first == PO_data->vehData.stationID)
+              VoI = double (1) / double (it->second.CPM_sent);
+          }
+
+          if (N_InclusionRateControl_Counter >
+              N_InclusionRateControl) // If the Object has NOT been included more than N_InclusionRateControl times...
+          {
+            N_InclusionRateControl_Counter = 0; //...reset the counters...
+            return true; //...and include the Object
+          }
+
+          if (VoI >
+              VoI_Threshold_ObjectSelfAnnouncement) //if the VoI of the Object is higher than the threshold...
+          {
+            N_InclusionRateControl_Counter = 0; //...reset the counters..
+            return true; //...and include the object
+          }
+        }
+      }
+
+      std::cout << "Object not included due to Object Self-Announcement RMR" << std::endl;
+      N_InclusionRateControl_Counter++;
+      return false;
+    }
+    return true;
   }
 
   void
@@ -199,6 +363,8 @@ namespace ns3 {
                 if (it->vehData.perceivedBy.getData () != (long) m_station_id)
                   continue;
                 if (!checkCPMconditions (it) && m_redundancy_mitigation)
+                  continue;
+                if (m_voi_computation_method != "ETSI" && !checkValueOfInformation (it, m_voi_computation_method))
                   continue;
                 else
                   {

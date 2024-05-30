@@ -156,6 +156,7 @@ class emergencyVehicleAlert : public Application
     Ptr<MetricSupervisor> m_metric_supervisor = nullptr;
 
     bool m_redundancy_mitigation; //!< @VALERIO enable the Redundancy Mitigation Rules
+    std::string m_VoIcomputationMethod; //!< @VALERIO set Value of Information computation method
     int16_t m_T_GenCpm; //!< @VALERIO set the CPM Generation Period
     double m_AoR_radius; //!< @VALERIO set the Area of Relevance radius
 

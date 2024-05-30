@@ -125,6 +125,20 @@ public:
    */
   void enableRedundancyMitigation(bool choice){m_redundancy_mitigation = choice;}
   void disableRedundancyMitigation(){m_redundancy_mitigation = false;}
+  /**
+   * @VALERIO
+   * @brief Specify which redundancy mitigation rule should be applied for the CPM generation.
+   *
+   * This method is used to specify the method to compute the VoI of a PO as specified in ETSI TS 103 324 V2.1.1 (2023-06) Annex E
+   * These methods are applied only if ObjectInclusionConfig = 1 (set in enableRedundancyMitigation()).
+   * "ETSI" (default)
+   * "frequency-based"
+   * "dynamics-based"
+   * "distance-based"
+   * "object self-announcement"
+   * @param voi_computation_method
+   */
+  void setRedundancyMitigation(std::string voi_computation_method){m_voi_computation_method = voi_computation_method;}
 
   void setCheckCpmGenMs(long nextCPM) {m_N_GenCpm=nextCPM;};
 
@@ -150,6 +164,14 @@ private:
    * @return
    */
   bool checkCPMconditions(std::vector<LDM::returnedVehicleData_t>::iterator it);
+  /**
+   * @VALERIO
+   * @brief Evaluate the conditions for the generation of a CPM as defined in ETSI TS 103 324 V2.1.1 (2023-06) ANNEX E
+   * @param it  The iterator of the vehicle data to be checked.
+   * @param m_voi_computation_method The method used to evaluate the Value of Information of a Perceived Object
+   * @return
+   */
+  bool checkValueOfInformation(std::vector<LDM::returnedVehicleData_t>::iterator it, std::string m_voi_computation_method);
   double cartesian_dist(double lon1, double lat1, double lon2, double lat2);
 
   std::function<void(asn1cpp::Seq<CollectivePerceptionMessage>, Address)> m_CPReceiveCallback;  //! Callback function for received CPMs
@@ -172,6 +194,7 @@ private:
   bool m_real_time; //! Flag to specify if using real time or simulation time for the CPM timestamps
   bool m_vehicle;
   bool m_redundancy_mitigation; //! Flag to specify if using redundancy mitigation defined for the CPM generation
+  std::string m_voi_computation_method; //! @VALERIO set the method to compute Value of Information (VoI)
   VDP* m_vdp; //! VDP object
   Ptr<TraciClient> m_client;
 
@@ -200,6 +223,20 @@ private:
 
   std::string m_csv_name_trace; //!< @VALERIO @MATTIA CSV file name for CPM traces
   std::ofstream m_csv_ofstream_trace; //!< @VALERIO @MATTIA CSV log stream (CPM), created using m_csv_name_trace
+
+  const double C_InclusionRateControl = 0.5; //! @VALERIO C_InclusionRateControl as defined in ETSI TS 103 324 V2.1.1 (2023-06) Annex F
+  const long N_InclusionRateControl = 10; //! @VALERIO N_InclusionRateControl as defined in ETSI TS 103 324 V2.1.1 (2023-06) Annex F
+
+  long N_InclusionRateControl_Counter;
+
+  double VoI; //! @VALERIO Value of Information as defined in ETSI TS 103 324 V2.1.1 (2023-06)
+  double VoI_Position;
+  double VoI_Speed;
+  double VoI_Threshold_Frequency; //! @VALERIO threshold for VoI computation with frequency-based method
+  double VoI_Threshold_Dynamics_Position; //! @VALERIO position threshold for VoI computation with dynamics-based method
+  double VoI_Threshold_Dynamics_Speed; //! @VALERIO speed threshold for VoI computation with dynamics-based method
+  double VoI_Threshold_Distance; //! @VALERIO threshold for VoI computation with distance-based method
+  double VoI_Threshold_ObjectSelfAnnouncement; //! @VALERIO threshold for VoI computation with object self-announcement method
 };
 }
 #endif // CPBASICSERVICE_H

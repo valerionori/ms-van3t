@@ -38,7 +38,7 @@ def run_simulation(ns3_path, results_path, maps_path, simTime,
                         f"{application} "
                         f"--simTime={simTime} "
                         f"--AreaOfRelevance={AoR} "
-                        f"--RedundancyMitigation={j} "
+                        f"--VoIComputationMethod={j} "
                         f"--bandwidthBandSl={channel_bandwidth*10} "
                         f"--penetrationRate={k} "
                         f"--CPMGenerationPeriod={z} "
@@ -56,19 +56,18 @@ def run_simulation(ns3_path, results_path, maps_path, simTime,
 
                     # Initialize the CSV files
                     initializeCSV.csv_ear_initialization(results_path, i, j, k, z)
-                    # initializeCSV.csv_cbr_initialization(results_path, i, j, k, z)
                     initializeCSV.csv_packet_size_initialization(results_path, i, j, k, z)
 
 
 # Define Toolchain parameters
-simTime = 10                                    # Simulation Time
+simTime = 30                                    # Simulation Time
 AoR = 250                                       # EAR Measurements Start Time
-s = [10, 12]                               # Simulated scenarios (number of ITS-Ss)
-r = [True]                                      # Simulated Redundancy Mitigation Rules
+s = [50, 75, 100]                               # Simulated scenarios (number of ITS-Ss)
+r = ['ETSI']                                    # Simulated Value of Information computation method
 channel_bandwidth = 10                          # SL Channel Bandwidth in MHz
-penetration_rate = [0.5, 1]                # Market Penetration Rate (MPR)
+penetration_rate = [0.2, 0.5, 1]                # Market Penetration Rate (MPR)
 T_CpmGen_ms = [100, 1000]                       # CPM Generation Period
-seeds = 1                                       # number of simulations for each point
+seeds = 2                                       # Number of simulations for each point
 
 # Take the Start Time of the Toolchain
 toolchain_start = datetime.now()
@@ -79,11 +78,6 @@ results_path = os.path.expanduser('~/CLionProjects/ms-van3t/ns-3-dev/Results/')
 maps_path = os.path.expanduser(
     '~/CLionProjects/ms-van3t/ns-3-dev/src/automotive/examples/sumo_files_v2v_map_congestion/')
 
-# Define Plots path
-plot_dir = toolchain_start.strftime("%d-%m-%Y_%H:%M:%S")
-plots_path = os.path.expanduser('~/CLionProjects/ms-van3t/ns-3-dev/Plots/' + plot_dir + '/')
-
-
 # Run simulations for each parameter combination
 for i in range(seeds):
 
@@ -92,7 +86,6 @@ for i in range(seeds):
 
     run_simulation(ns3_path, results_path, maps_path, simTime, AoR,
                    channel_bandwidth, penetration_rate, T_CpmGen_ms, s, r, i)
-
 
     os.chdir(ns3_path)
     os.rename("Results/", "Seed_" + str(i) + "/")
@@ -104,6 +97,4 @@ toolchain_end = datetime.now()
 print('Simulation Started on day ' + toolchain_start.strftime("%d-%m-%Y at %H:%M:%S"))
 print('Simulation Ended on day ' + toolchain_end.strftime("%d-%m-%Y at %H:%M:%S"))
 
-
-print('Results generated in ' + results_path)
-print('Plots generated in ' + plots_path)
+print('Results generated in ' + ns3_path)
