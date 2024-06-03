@@ -165,7 +165,7 @@ namespace ns3 {
           return true;
       }
 
-    std::cout << "Object not included due to ETSI redundancy mitigation rules" << std::endl; // @VALERIO
+    //std::cout << "Object not included due to ETSI redundancy mitigation rules" << std::endl; // @VALERIO
     return false;
   }
   bool

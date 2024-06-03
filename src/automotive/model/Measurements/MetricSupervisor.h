@@ -402,7 +402,7 @@ public:
   /**
    * @breif This function gets the overall CBR.
    */
-  float getAverageCBROverall();
+  double getAverageCBROverall();
   /**
    * @breif This function gets the mutex to access the CBR values.
    */

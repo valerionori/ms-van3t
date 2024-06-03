@@ -399,7 +399,7 @@ namespace ns3
         {
           auto POcontainer = asn1cpp::getSeq(wrappedContainer->containerData.choice.PerceivedObjectContainer,PerceivedObjectContainer);
           int PObjects_size = asn1cpp::sequenceof::getSize(POcontainer->perceivedObjects);
-          std::cout << "["<< Simulator::Now ().GetSeconds ()<<"] " << m_id <<" received a new CPMv2 from " << asn1cpp::getField(cpm->header.stationId,long) << " with " << PObjects_size << " perceived objects." << std::endl;
+          //std::cout << "["<< Simulator::Now ().GetSeconds ()<<"] " << m_id <<" received a new CPMv2 from " << asn1cpp::getField(cpm->header.stationId,long) << " with " << PObjects_size << " perceived objects." << std::endl;
           for(int j=0; j<PObjects_size;j++)
               {
                LDM::returnedVehicleData_t PO_data;

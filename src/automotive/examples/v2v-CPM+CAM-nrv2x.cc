@@ -861,7 +861,7 @@ main (int argc, char *argv[])
     metSup->setCBRWindowValue(100);
     metSup->setCBRAlphaValue(0.5);
     metSup->setSimulationTimeValue((float) simTime);
-    metSup->startCheckCBR();
+    //metSup->startCheckCBR();
   }
 
   /*** 7. Setup interface and application for dynamic nodes ***/
@@ -898,7 +898,7 @@ main (int argc, char *argv[])
       ApplicationContainer AppSample = EmergencyVehicleAlertHelper.Install (includedNode);
 
       //AppSample.Start (Seconds (0.0));
-      AppSample.Start (Seconds (double(rand())/RAND_MAX));
+      AppSample.Start (Seconds (1.5 + double(rand())/RAND_MAX));
       AppSample.Stop (Seconds(simTime) - Simulator::Now () - Seconds (0.1));
 
       return includedNode;
@@ -924,11 +924,15 @@ main (int argc, char *argv[])
   sumoClient->SumoSetup (setupNewWifiNode, shutdownWifiNode);
 
   /* @VALERIO -> detect the number of connected vehicles */
-  Simulator::Schedule(Seconds(2.0), &detectConnectedVehicles, sumoClient);
+  Simulator::Schedule(Seconds(3.0), &detectConnectedVehicles, sumoClient);
 
   /* @VALERIO -> compute the Environmental Awareness Ratio (EAR) */
   if(m_metric_sup)
-    Simulator::Schedule(Seconds(3.0), &computeAwarenessRatio, sumoClient, AoR_radius);
+  {
+    Simulator::Schedule(Seconds(4.0), &computeAwarenessRatio, sumoClient, AoR_radius);
+    Simulator::Schedule(Seconds(4.0), std::bind(&MetricSupervisor::startCheckCBR, metSup));
+  }
+
 
   /*** 8. Start Simulation ***/
   Simulator::Stop (Seconds(simTime));
@@ -955,7 +959,7 @@ main (int argc, char *argv[])
     }
 
     // Fill the CVS file
-    csv_ofstream_prr << numberOfNodes << "," << redundancyMitigation << "," << penetrationRate << "," << T_GenCpm << "," << metSup->getAveragePRR_overall() << "," << metSup->getAverageLatency_overall () << std::endl;
+    csv_ofstream_prr << numberOfNodes << "," << VoIcomputationMethod << "," << penetrationRate << "," << T_GenCpm << "," << metSup->getAveragePRR_overall() << "," << metSup->getAverageLatency_overall () << std::endl;
 
     std::cout << "Average PRR: " << metSup->getAveragePRR_overall() << std::endl;
     std::cout << "Average latency (ms): " << metSup->getAverageLatency_overall () << std::endl;
@@ -978,7 +982,7 @@ main (int argc, char *argv[])
     }
 
     // Fill the CVS file
-    csv_ofstream_cbr << numberOfNodes << "," << redundancyMitigation << "," << penetrationRate << "," << T_GenCpm << "," << metSup->getAverageCBROverall() << std::endl;
+    csv_ofstream_cbr << numberOfNodes << "," << VoIcomputationMethod << "," << penetrationRate << "," << T_GenCpm << "," << metSup->getAverageCBROverall() << std::endl;
 
     std::cout << "Average CBR: " << metSup->getAverageCBROverall() << std::endl;
 
@@ -1008,25 +1012,9 @@ main (int argc, char *argv[])
       Average_EAR /= (double) Average_EAR_Overall.size();
 
     // Fill the CVS file
-    csv_ofstream_ear << numberOfNodes << "," << redundancyMitigation << "," << penetrationRate << "," << T_GenCpm << "," << Average_EAR << std::endl;
+    csv_ofstream_ear << numberOfNodes << "," << VoIcomputationMethod << "," << penetrationRate << "," << T_GenCpm << "," << Average_EAR << std::endl;
 
     std::cout << "Average EAR: " << Average_EAR << std::endl;
-
-    /** @VALERIO Packet Size data processing */
-    std::ofstream csv_ofstream_packetsize;
-    std::string csv_name_packetsize = "Results/Traces/Average_PacketSize.csv";
-
-    if(access(csv_name_packetsize.c_str(),F_OK)!=-1)
-    {
-      // The file already exists
-      csv_ofstream_packetsize.open(csv_name_packetsize,std::ofstream::out | std::ofstream::app);
-    }
-    else
-    {
-      // The file does not exist yet
-      csv_ofstream_packetsize.open(csv_name_packetsize);
-      csv_ofstream_packetsize << "numberOfUEs,RMR,MPR,T_Cpm_Gen,Average CPM Packet Size (bytes)" << std::endl;
-    }
   }
 
   return 0;

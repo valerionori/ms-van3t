@@ -403,11 +403,13 @@ namespace ns3
     randVar->SetAttribute("Min", DoubleValue(0.0));
     randVar->SetAttribute("Max", DoubleValue(1.0));
     sumoVehicles.clear();
+    double counter = 0; // @VALERIO
 
     try
       {
         // ask sumo for all (new) departed vehicles SINCE last simulation step (=one synch interval)
-        std::vector<std::string> departedVehicles = this->TraCIAPI::simulation.getDepartedIDList();
+        //std::vector<std::string> departedVehicles = this->TraCIAPI::simulation.getDepartedIDList();
+        std::vector<std::string> departedVehicles = TraCIAPI::vehicle.getIDList(); // @VALERIO
 
         // ask sumo for all (new) arrived vehicles SINCE last simulation step (=one synch interval)
         std::vector<std::string> arrivedVehicles = this->TraCIAPI::simulation.getArrivedIDList();
@@ -429,9 +431,11 @@ namespace ns3
             else
               {
                 // penetration rate determines number of included nodes
-                if (randVar->GetValue() <= m_penetrationRate)
+                //if (randVar->GetValue() <= m_penetrationRate)
+                if (counter < m_penetrationRate * (double) departedVehicles.size()) // @VALERIO
                   {
                     sumoVehicles.push_back(veh);
+                    counter++;
                   }
               }
           }
@@ -468,7 +472,8 @@ namespace ns3
       {
         // get departed and arrived sumo vehicles since last simulation step
         std::vector<std::string> sumoVehicles;
-        GetSumoVehicles(sumoVehicles);
+        if (Simulator::Now().GetSeconds() == 0.5) // @VALERIO
+          GetSumoVehicles(sumoVehicles);
 
         // iterate over all sumo vehicles with changes; include departed vehicles, exclude arrived vehicles
         for (std::vector<std::string>::iterator it = sumoVehicles.begin(); it != sumoVehicles.end(); ++it)

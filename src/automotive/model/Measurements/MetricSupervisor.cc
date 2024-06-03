@@ -435,10 +435,10 @@ MetricSupervisor::checkCBR ()
 
   m_mutex.lock();
 
-  for (auto it = nodes.begin (); it != nodes.end (); ++it)
+  for (auto & it : nodes)
     {
-      std::string node = it->first;
-      std::basic_string<char> node_id = std::to_string(it->second.second->GetId ());
+      std::string node = it.first;
+      std::basic_string<char> node_id = std::to_string(it.second.second->GetId ());
       Time busyCbr = currentBusyCBR[node_id];
 
       if (busyCbr == Time(-1.0))
@@ -447,22 +447,24 @@ MetricSupervisor::checkCBR ()
         }
       // std::cout << "Node " << node << " busy time: " << busyCbr.GetDouble() / 1e6 << std::endl;
       double currentCbr = busyCbr.GetDouble() / (m_cbr_window * 1e6);
+      if (currentCbr > 1)
+        currentCbr = 1;
 
-      if (m_average_cbr.find (node) != m_average_cbr.end ())
-        {
-          // Exponential moving average
-          double new_cbr = m_cbr_alpha * m_average_cbr[node].back () + (1 - m_cbr_alpha) * currentCbr;
-          m_average_cbr[node].push_back (new_cbr);
-        }
-      else
-        {
+//      if (m_average_cbr.find (node) != m_average_cbr.end ())
+//        {
+//          // Exponential moving average
+//          double new_cbr = m_cbr_alpha * m_average_cbr[node].back () + (1 - m_cbr_alpha) * currentCbr;
+//          m_average_cbr[node].push_back (new_cbr);
+//        }
+//      else
+//        {
           m_average_cbr[node].push_back (currentCbr);
-        }
+//        }
     }
 
-  for(auto it = currentBusyCBR.begin(); it != currentBusyCBR.end(); ++it)
+  for(auto & it : currentBusyCBR)
     {
-      it->second = Time(-1.0);
+      it.second = Time(-1.0);
     }
 
   m_mutex.unlock();
@@ -535,22 +537,41 @@ MetricSupervisor::getCBRPerNode (std::string node)
     }
 }
 
-float MetricSupervisor::getAverageCBROverall ()
+//float MetricSupervisor::getAverageCBROverall ()
+//{
+//  float sum = 0;
+//  int count = 0;
+//  for (auto it = m_average_cbr.begin (); it != m_average_cbr.end (); ++it)
+//    {
+//      if (it->second.empty ())
+//        {
+//          continue;
+//        }
+//      sum += it->second.back ();
+//      count++;
+//    }
+//  return sum / count;
+//}
+
+
+double MetricSupervisor::getAverageCBROverall ()
 {
-  float sum = 0;
+  double sum = 0;
   int count = 0;
-  for (auto it = m_average_cbr.begin (); it != m_average_cbr.end (); ++it)
+  for (auto & it : m_average_cbr)
+  {
+    if (it.second.empty ())
     {
-      if (it->second.empty ())
-        {
-          continue;
-        }
-      sum += it->second.back ();
+      continue;
+    }
+    for (auto i:it.second)
+    {
+      sum += i;
       count++;
     }
-  return sum / count;
+  }
+  return sum / (double) count;
 }
-
 
 std::mutex& MetricSupervisor::getCBRMutex()
 {

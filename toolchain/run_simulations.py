@@ -19,7 +19,7 @@ from datetime import datetime
 
 def run_simulation(ns3_path, results_path, maps_path, simTime,
                    AoR, channel_bandwidth, penetration_rate, T_CpmGen_ms,
-                   scenarios, redundancy, seed):
+                   scenarios, redundancy, seed, seed_counter):
 
     application = "v2v-CPM+CAM-nrv2x"
     counter = 0
@@ -49,7 +49,7 @@ def run_simulation(ns3_path, results_path, maps_path, simTime,
                     # Update Simulation Number
                     counter = counter + 1
                     numberOfSimulations = len(scenarios)*len(penetration_rate)*len(T_CpmGen_ms)*len(redundancy)
-                    print('Simulation n. ' + str(counter) + '/' + str(numberOfSimulations) + ', Seed:' + str(seed))
+                    print(f'Simulation n. {counter}/{numberOfSimulations}, Seed: {seed_counter + 1}/5')
 
                     # Run the Simulation
                     os.chdir(ns3_path)
@@ -57,7 +57,7 @@ def run_simulation(ns3_path, results_path, maps_path, simTime,
 
                     # Initialize the CSV files
                     initializeCSV.csv_ear_initialization(results_path, i, j, k, z)
-                    initializeCSV.csv_packet_size_initialization(results_path, i, j, k, z)
+                    initializeCSV.csv_traces_initialization(results_path, i, j, k, z)
 
 
 # Define Toolchain parameters
@@ -86,11 +86,19 @@ for i in seeds:
     # Initialize all CSV files
     initializeCSV.csv_paths_initialization(ns3_path, results_path, seed_counter)
 
+    # Run the simulations for different combination of parameters
     run_simulation(ns3_path, results_path, maps_path, simTime, AoR,
-                   channel_bandwidth, penetration_rate, T_CpmGen_ms, s, r, i)
+                   channel_bandwidth, penetration_rate, T_CpmGen_ms, s, r, i, seed_counter)
+
+    # Compute metrics
+    initializeCSV.compute_average_packet_size(results_path, s, r, penetration_rate, T_CpmGen_ms)
+    initializeCSV.compute_average_transmitted_cpm_vehicle_second(results_path, s, r, penetration_rate, T_CpmGen_ms, simTime)
+    initializeCSV.compute_transmitted_cpm(results_path, s, r, penetration_rate, T_CpmGen_ms)
+    initializeCSV.compute_transmitted_cam(results_path, s, r, penetration_rate, T_CpmGen_ms)
 
     os.chdir(ns3_path)
-    os.rename("Results/", "Seed_" + str(seed_counter) + "/")
+    os.makedirs("Simulation_" + str(toolchain_start), exist_ok=True)
+    os.rename("Results/", "Simulation_" + str(toolchain_start) + "/Seed_" + str(seed_counter) + "/")
     seed_counter += 1
 
 # Take the End Time of the Toolchain
