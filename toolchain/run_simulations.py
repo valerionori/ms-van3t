@@ -21,7 +21,7 @@ def run_simulation(ns3_path, results_path, maps_path, simTime,
                    AoR, channel_bandwidth, penetration_rate, T_CpmGen_ms,
                    scenarios, redundancy, seed, seed_counter):
 
-    application = "v2v-CPM+CAM-nrv2x"
+    application = "v2v-extendedCPM-nrv2x"
     counter = 0
 
     for i in scenarios:
@@ -42,7 +42,7 @@ def run_simulation(ns3_path, results_path, maps_path, simTime,
                         f"--bandwidthBandSl={channel_bandwidth*10} "
                         f"--penetrationRate={k} "
                         f"--CPMGenerationPeriod={z} "
-                        f"--sumo-gui={True} "
+                        f"--sumo-gui={False} "
                         f"--SUMOSeed={seed}"
                     )
 
@@ -66,9 +66,9 @@ AoR = 250                                       # EAR Measurements Start Time
 s = [50, 75, 100]                               # Simulated scenarios (number of ITS-Ss)
 r = ['ETSI']                                    # Simulated Value of Information computation method
 channel_bandwidth = 10                          # SL Channel Bandwidth in MHz
-penetration_rate = [0.2, 0.5, 1]                # Market Penetration Rate (MPR)
+penetration_rate = [0.2, 0.5, 0.8]                # Market Penetration Rate (MPR)
 T_CpmGen_ms = [100, 1000]                       # CPM Generation Period
-seeds = [2785, 7277, 5242, 6516, 9689]          # Simulations seed
+seeds = [2785, 7277]          # Simulations seed
 
 # Take the Start Time of the Toolchain
 toolchain_start = datetime.now()
@@ -97,8 +97,8 @@ for i in seeds:
     initializeCSV.compute_transmitted_cam(results_path, s, r, penetration_rate, T_CpmGen_ms)
 
     os.chdir(ns3_path)
-    os.makedirs("Simulation_" + str(toolchain_start), exist_ok=True)
-    os.rename("Results/", "Simulation_" + str(toolchain_start) + "/Seed_" + str(seed_counter) + "/")
+    os.makedirs("Simulation_EXTENDED_" + str(toolchain_start), exist_ok=True)
+    os.rename("Results/", "Simulation_EXTENDED_" + str(toolchain_start) + "/Seed_" + str(seed_counter) + "/")
     seed_counter += 1
 
 # Take the End Time of the Toolchain

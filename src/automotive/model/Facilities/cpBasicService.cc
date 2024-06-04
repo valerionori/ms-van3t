@@ -77,6 +77,11 @@ namespace ns3 {
     VoI_Threshold_Dynamics_Speed = 0.5;
     VoI_Threshold_Distance = 6;
     VoI_Threshold_ObjectSelfAnnouncement = 0.5;
+
+    /* @VALERIO, @MATTIA -> Parameters for OriginatingVehicleContainer evaluation */
+    m_last_distance = -1;
+    m_last_speed = -1;
+    m_last_heading = -1;
   }
 
   void
@@ -316,6 +321,45 @@ namespace ns3 {
     }
     return true;
   }
+  bool
+  CPBasicService::checkOriginatingVehicleContainerConditions()
+  {
+
+    /* It is the first time the CPM is generated */
+    if (m_last_distance == -1 && m_last_speed == -1 && m_last_heading == -1)
+      return true;
+
+    /* 1a)
+     * The absolute difference between the current heading of the originating
+     * ITS-S and the heading included in the CAM previously transmitted by the
+     * originating ITS-S exceeds 4°;
+    */
+    double head_diff = m_vdp->getHeadingValue () - m_last_heading;
+    head_diff += (head_diff>180.0) ? -360.0 : (head_diff<-180.0) ? 360.0 : 0.0;
+    if (head_diff > 4.0 || head_diff < -4.0)
+      return true;
+
+    /* 1b)
+     * the distance between the current position of the originating ITS-S and
+     * the position included in the CAM previously transmitted by the originating
+     * ITS-S exceeds 4 m;
+    */
+    double pos_diff = m_vdp->getTravelledDistance () - m_last_distance;
+    if (pos_diff > 4.0 || pos_diff < -4.0)
+      return true;
+
+    /* 1c)
+     * the absolute difference between the current speed of the originating ITS-S
+     * and the speed included in the CAM previously transmitted by the originating
+     * ITS-S exceeds 0,5 m/s.
+    */
+    double speed_diff = m_vdp->getSpeedValue () - m_last_speed;
+    if (speed_diff > 0.5 || speed_diff < -0.5)
+      return true;
+
+    std::cout << "originatingVehicleContainer not included due to ETSI Generation Rules" << std::endl; // @VALERIO, @MATTIA
+    return false;
+  }
 
   void
   CPBasicService::generateAndEncodeCPM()
@@ -507,6 +551,69 @@ namespace ns3 {
                        cpm_mandatory_data.heading.getValue ());
     asn1cpp::setField (originatingVehicleContainer->orientationAngle.confidence,
                        cpm_mandatory_data.heading.getConfidence ());
+
+    if (checkOriginatingVehicleContainerConditions())
+    {
+      asn1cpp::setField (originatingVehicleContainer->stationType,
+                         m_stationtype);
+      asn1cpp::setField (originatingVehicleContainer->referencePosition.latitude,
+                         cpm_mandatory_data.latitude);
+      asn1cpp::setField (originatingVehicleContainer->referencePosition.longitude,
+                         cpm_mandatory_data.longitude);
+      asn1cpp::setField (originatingVehicleContainer->referencePosition.altitude.altitudeValue,
+                         cpm_mandatory_data.altitude.getValue());
+      asn1cpp::setField (originatingVehicleContainer->referencePosition.altitude.altitudeConfidence,
+                         cpm_mandatory_data.altitude.getConfidence());
+      asn1cpp::setField (originatingVehicleContainer->referencePosition.positionConfidenceEllipse.semiMajorAxisLength,
+                         cpm_mandatory_data.posConfidenceEllipse.semiMajorConfidence);
+      asn1cpp::setField (originatingVehicleContainer->referencePosition.positionConfidenceEllipse.semiMinorAxisLength,
+                         cpm_mandatory_data.posConfidenceEllipse.semiMinorConfidence);
+      asn1cpp::setField (originatingVehicleContainer->referencePosition.positionConfidenceEllipse.semiMajorAxisOrientation,
+                         cpm_mandatory_data.posConfidenceEllipse.semiMajorOrientation);
+
+      asn1cpp::setField (originatingVehicleContainer->heading.headingValue,
+                         cpm_mandatory_data.heading.getValue());
+      asn1cpp::setField (originatingVehicleContainer->heading.headingConfidence,
+                         cpm_mandatory_data.heading.getConfidence());
+      asn1cpp::setField (originatingVehicleContainer->speed.speedValue,
+                         cpm_mandatory_data.speed.getValue());
+      asn1cpp::setField (originatingVehicleContainer->speed.speedConfidence,
+                         cpm_mandatory_data.speed.getConfidence());
+      asn1cpp::setField(originatingVehicleContainer->driveDirection,
+                        cpm_mandatory_data.driveDirection);
+      asn1cpp::setField(originatingVehicleContainer->vehicleLength.vehicleLengthValue,
+                        cpm_mandatory_data.VehicleLength.getValue());
+      asn1cpp::setField(originatingVehicleContainer->vehicleLength.vehicleLengthConfidenceIndication,
+                        cpm_mandatory_data.VehicleLength.getConfidence());
+      asn1cpp::setField(originatingVehicleContainer->vehicleWidth,
+                        cpm_mandatory_data.VehicleWidth);
+      asn1cpp::setField(originatingVehicleContainer->longitudinalAcceleration.value,
+                        cpm_mandatory_data.longAcceleration.getValue ());
+      asn1cpp::setField(originatingVehicleContainer->longitudinalAcceleration.confidence,
+                        cpm_mandatory_data.longAcceleration.getConfidence ());
+      asn1cpp::setField(originatingVehicleContainer->curvature.curvatureValue,
+                        cpm_mandatory_data.curvature.getValue ());
+      asn1cpp::setField(originatingVehicleContainer->curvature.curvatureConfidence,
+                        cpm_mandatory_data.curvature.getConfidence ());
+      asn1cpp::setField(originatingVehicleContainer->curvatureCalculationMode,
+                        cpm_mandatory_data.curvature_calculation_mode);
+      asn1cpp::setField(originatingVehicleContainer->yawRate.yawRateValue,
+                        cpm_mandatory_data.yawRate.getValue ());
+      asn1cpp::setField(originatingVehicleContainer->yawRate.yawRateConfidence,
+                        cpm_mandatory_data.yawRate.getConfidence ());
+
+      asn1cpp::setField (wrappedCpmContainer->containerData.present,
+                         WrappedCpmContainer__containerData_PR_OriginatingVehicleContainer);
+      asn1cpp::setField (wrappedCpmContainer->containerData.choice.OriginatingVehicleContainer,
+                         originatingVehicleContainer);
+      asn1cpp::sequenceof::pushList (cpm->payload.cpmContainers, wrappedCpmContainer);
+
+      // Store all the "previous" values used in checkCamConditions()
+      m_last_distance = m_vdp->getTravelledDistance ();
+      m_last_speed = m_vdp->getSpeedValue ();
+      m_last_heading = m_vdp->getHeadingValue ();
+    }
+
     asn1cpp::setField (wrappedCpmContainer->containerData.present,
                        WrappedCpmContainer__containerData_PR_OriginatingVehicleContainer);
     asn1cpp::setField (wrappedCpmContainer->containerData.choice.OriginatingVehicleContainer,
@@ -552,7 +659,7 @@ namespace ns3 {
       {
         //If no sensorInformationContainer and no perceivedObjectsContainer
         SensorInfoContainerIncluded = false;
-        if (numberOfPOs == 0)
+        if (numberOfPOs == 0 && !checkOriginatingVehicleContainerConditions())
           return; //No CPM is generated in the current cycle
       }
 

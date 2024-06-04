@@ -14,6 +14,22 @@
 /* Including external dependencies */
 #include "Wgs84Angle.h"
 #include "constr_SEQUENCE.h"
+/* @VALERIO, @MATTIA -> From CAM BasicContainer */
+#include "TrafficParticipantType.h"
+#include "ReferencePositionWithConfidence.h"
+/* @VALERIO, @MATTIA -> From CAM BasicVehicleContainerHighFrequency */
+#include "Heading.h"
+#include "Speed.h"
+#include "DriveDirection.h"
+#include "VehicleLength.h"
+#include "VehicleWidth.h"
+#include "AccelerationComponent.h"
+#include "Curvature.h"
+#include "CurvatureCalculationMode.h"
+#include "YawRate.h"
+#include "AccelerationControl.h"
+#include "LanePosition.h"
+#include "PerformanceClass.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,26 +38,53 @@ extern "C" {
 /* Forward declarations */
 struct CartesianAngle;
 struct TrailerDataSet;
+/* @VALERIO, @MATTIA -> From CAM BasicVehicleContainerHighFrequency */
+struct SteeringWheelAngle;
+struct AccelerationComponent;
+struct CenDsrcTollingZone;
 
 /* OriginatingVehicleContainer */
 typedef struct OriginatingVehicleContainer {
-	Wgs84Angle_t	 orientationAngle;
-	struct CartesianAngle	*pitchAngle;	/* OPTIONAL */
-	struct CartesianAngle	*rollAngle;	/* OPTIONAL */
-	struct TrailerDataSet	*trailerDataSet;	/* OPTIONAL */
-	/*
-	 * This type is extensible,
-	 * possible extensions are below.
-	 */
-	
-	/* Context for parsing across buffer boundaries */
-	asn_struct_ctx_t _asn_ctx;
+    Wgs84Angle_t	 orientationAngle;
+    struct CartesianAngle	*pitchAngle;	/* OPTIONAL */
+    struct CartesianAngle	*rollAngle;	/* OPTIONAL */
+    struct TrailerDataSet	*trailerDataSet;	/* OPTIONAL */
+
+    /* @VALERIO, @MATTIA -> From CAM Basic Container */
+    TrafficParticipantType_t	 stationType  /* OPTIONAL */;
+    ReferencePositionWithConfidence_t	 referencePosition  /* OPTIONAL */;
+
+    /* @VALERIO, @MATTIA -> From CAM BasicVehicleContainerHighFrequency */
+    Heading_t	 heading  /* OPTIONAL */;
+    Speed_t	 speed  /* OPTIONAL */;
+    DriveDirection_t	 driveDirection /* OPTIONAL */;
+    VehicleLength_t	 vehicleLength  /* OPTIONAL */;
+    VehicleWidth_t	 vehicleWidth /* OPTIONAL */;
+    AccelerationComponent_t	 longitudinalAcceleration /* OPTIONAL */;
+    Curvature_t	 curvature  /* OPTIONAL */;
+    CurvatureCalculationMode_t	 curvatureCalculationMode /* OPTIONAL */;
+    YawRate_t	 yawRate  /* OPTIONAL */;
+    AccelerationControl_t	*accelerationControl	/* OPTIONAL */;
+    LanePosition_t	*lanePosition	/* OPTIONAL */;
+    struct SteeringWheelAngle	*steeringWheelAngle	/* OPTIONAL */;
+    struct AccelerationComponent	*lateralAcceleration	/* OPTIONAL */;
+    struct AccelerationComponent	*verticalAcceleration	/* OPTIONAL */;
+    PerformanceClass_t	*performanceClass	/* OPTIONAL */;
+    struct CenDsrcTollingZone	*cenDsrcTollingZone	/* OPTIONAL */;
+
+    /*
+     * This type is extensible,
+     * possible extensions are below.
+     */
+
+    /* Context for parsing across buffer boundaries */
+    asn_struct_ctx_t _asn_ctx;
 } OriginatingVehicleContainer_t;
 
 /* Implementation */
 extern asn_TYPE_descriptor_t asn_DEF_OriginatingVehicleContainer;
 extern asn_SEQUENCE_specifics_t asn_SPC_OriginatingVehicleContainer_specs_1;
-extern asn_TYPE_member_t asn_MBR_OriginatingVehicleContainer_1[4];
+extern asn_TYPE_member_t asn_MBR_OriginatingVehicleContainer_1[22];
 
 #ifdef __cplusplus
 }
@@ -50,6 +93,10 @@ extern asn_TYPE_member_t asn_MBR_OriginatingVehicleContainer_1[4];
 /* Referred external types */
 #include "CartesianAngle.h"
 #include "TrailerDataSet.h"
+/* @VALERIO, @MATTIA -> From CAM BasicVehicleContainerHighFrequency */
+#include "SteeringWheelAngle.h"
+#include "AccelerationComponent.h"
+#include "CenDsrcTollingZone.h"
 
 #endif	/* _OriginatingVehicleContainer_H_ */
 #include "asn_internal.h"

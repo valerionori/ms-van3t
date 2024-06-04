@@ -8,115 +8,316 @@
 #include "OriginatingVehicleContainer.h"
 
 asn_TYPE_member_t asn_MBR_OriginatingVehicleContainer_1[] = {
-	{ ATF_NOFLAGS, 0, offsetof(struct OriginatingVehicleContainer, orientationAngle),
-		(ASN_TAG_CLASS_CONTEXT | (0 << 2)),
-		-1,	/* IMPLICIT tag at current level */
-		&asn_DEF_Wgs84Angle,
-		0,
-		{
+        { ATF_NOFLAGS, 0, offsetof(struct OriginatingVehicleContainer, orientationAngle),
+                (ASN_TAG_CLASS_CONTEXT | (0 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_Wgs84Angle,
+                0,
+                {
 #if !defined(ASN_DISABLE_OER_SUPPORT)
-			0,
+                        0,
 #endif  /* !defined(ASN_DISABLE_OER_SUPPORT) */
 #if !defined(ASN_DISABLE_UPER_SUPPORT) || !defined(ASN_DISABLE_APER_SUPPORT)
-			0,
+                        0,
 #endif  /* !defined(ASN_DISABLE_UPER_SUPPORT) || !defined(ASN_DISABLE_APER_SUPPORT) */
-			0
-		},
-		0, 0, /* No default value */
-		"orientationAngle"
-		},
-	{ ATF_POINTER, 3, offsetof(struct OriginatingVehicleContainer, pitchAngle),
-		(ASN_TAG_CLASS_CONTEXT | (1 << 2)),
-		-1,	/* IMPLICIT tag at current level */
-		&asn_DEF_CartesianAngle,
-		0,
-		{
+                        0
+                },
+                0, 0, /* No default value */
+                "orientationAngle"
+        },
+        { ATF_POINTER, 3, offsetof(struct OriginatingVehicleContainer, pitchAngle),
+                (ASN_TAG_CLASS_CONTEXT | (1 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_CartesianAngle,
+                0,
+                {
 #if !defined(ASN_DISABLE_OER_SUPPORT)
-			0,
+                        0,
 #endif  /* !defined(ASN_DISABLE_OER_SUPPORT) */
 #if !defined(ASN_DISABLE_UPER_SUPPORT) || !defined(ASN_DISABLE_APER_SUPPORT)
-			0,
+                        0,
 #endif  /* !defined(ASN_DISABLE_UPER_SUPPORT) || !defined(ASN_DISABLE_APER_SUPPORT) */
-			0
-		},
-		0, 0, /* No default value */
-		"pitchAngle"
-		},
-	{ ATF_POINTER, 2, offsetof(struct OriginatingVehicleContainer, rollAngle),
-		(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
-		-1,	/* IMPLICIT tag at current level */
-		&asn_DEF_CartesianAngle,
-		0,
-		{
+                        0
+                },
+                0, 0, /* No default value */
+                "pitchAngle"
+        },
+        { ATF_POINTER, 2, offsetof(struct OriginatingVehicleContainer, rollAngle),
+                (ASN_TAG_CLASS_CONTEXT | (2 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_CartesianAngle,
+                0,
+                {
 #if !defined(ASN_DISABLE_OER_SUPPORT)
-			0,
+                        0,
 #endif  /* !defined(ASN_DISABLE_OER_SUPPORT) */
 #if !defined(ASN_DISABLE_UPER_SUPPORT) || !defined(ASN_DISABLE_APER_SUPPORT)
-			0,
+                        0,
 #endif  /* !defined(ASN_DISABLE_UPER_SUPPORT) || !defined(ASN_DISABLE_APER_SUPPORT) */
-			0
-		},
-		0, 0, /* No default value */
-		"rollAngle"
-		},
-	{ ATF_POINTER, 1, offsetof(struct OriginatingVehicleContainer, trailerDataSet),
-		(ASN_TAG_CLASS_CONTEXT | (3 << 2)),
-		-1,	/* IMPLICIT tag at current level */
-		&asn_DEF_TrailerDataSet,
-		0,
-		{
+                        0
+                },
+                0, 0, /* No default value */
+                "rollAngle"
+        },
+        { ATF_POINTER, 1, offsetof(struct OriginatingVehicleContainer, trailerDataSet),
+                (ASN_TAG_CLASS_CONTEXT | (3 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_TrailerDataSet,
+                0,
+                {
 #if !defined(ASN_DISABLE_OER_SUPPORT)
-			0,
+                        0,
 #endif  /* !defined(ASN_DISABLE_OER_SUPPORT) */
 #if !defined(ASN_DISABLE_UPER_SUPPORT) || !defined(ASN_DISABLE_APER_SUPPORT)
-			0,
+                        0,
 #endif  /* !defined(ASN_DISABLE_UPER_SUPPORT) || !defined(ASN_DISABLE_APER_SUPPORT) */
-			0
-		},
-		0, 0, /* No default value */
-		"trailerDataSet"
-		},
+                        0
+                },
+                0, 0, /* No default value */
+                "trailerDataSet"
+        },
+        /* @VALERIO, @MATTIA -> From CAM Basic Container */
+        { ATF_NOFLAGS, 0, offsetof(struct OriginatingVehicleContainer, stationType),
+                (ASN_TAG_CLASS_CONTEXT | (4 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_TrafficParticipantType,
+                0,
+                {
+#if !defined(ASN_DISABLE_OER_SUPPORT)
+                        0,
+#endif  /* !defined(ASN_DISABLE_OER_SUPPORT) */
+#if !defined(ASN_DISABLE_UPER_SUPPORT) || !defined(ASN_DISABLE_APER_SUPPORT)
+                        0,
+#endif  /* !defined(ASN_DISABLE_UPER_SUPPORT) || !defined(ASN_DISABLE_APER_SUPPORT) */
+                        0
+                },
+                0, 0, /* No default value */
+                "stationType"
+        },
+        { ATF_NOFLAGS, 0, offsetof(struct OriginatingVehicleContainer, referencePosition),
+                (ASN_TAG_CLASS_CONTEXT | (5 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_ReferencePositionWithConfidence,
+                0,
+                {
+#if !defined(ASN_DISABLE_OER_SUPPORT)
+                        0,
+#endif  /* !defined(ASN_DISABLE_OER_SUPPORT) */
+#if !defined(ASN_DISABLE_UPER_SUPPORT) || !defined(ASN_DISABLE_APER_SUPPORT)
+                        0,
+#endif  /* !defined(ASN_DISABLE_UPER_SUPPORT) || !defined(ASN_DISABLE_APER_SUPPORT) */
+                        0
+                },
+                0, 0, /* No default value */
+                "referencePosition"
+        },
+        /* @VALERIO, @MATTIA -> From CAM BasicVehicleContainerHighFrequency */
+        { ATF_NOFLAGS, 0, offsetof(struct OriginatingVehicleContainer, heading),
+                (ASN_TAG_CLASS_CONTEXT | (6 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_Heading,
+                0,
+                { 0, 0, 0 },
+                0, 0, /* No default value */
+                "heading"
+        },
+        { ATF_NOFLAGS, 0, offsetof(struct OriginatingVehicleContainer, speed),
+                (ASN_TAG_CLASS_CONTEXT | (7 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_Speed,
+                0,
+                { 0, 0, 0 },
+                0, 0, /* No default value */
+                "speed"
+        },
+        { ATF_NOFLAGS, 0, offsetof(struct OriginatingVehicleContainer, driveDirection),
+                (ASN_TAG_CLASS_CONTEXT | (8 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_DriveDirection,
+                0,
+                { 0, 0, 0 },
+                0, 0, /* No default value */
+                "driveDirection"
+        },
+        { ATF_NOFLAGS, 0, offsetof(struct OriginatingVehicleContainer, vehicleLength),
+                (ASN_TAG_CLASS_CONTEXT | (9 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_VehicleLength,
+                0,
+                { 0, 0, 0 },
+                0, 0, /* No default value */
+                "vehicleLength"
+        },
+        { ATF_NOFLAGS, 0, offsetof(struct OriginatingVehicleContainer, vehicleWidth),
+                (ASN_TAG_CLASS_CONTEXT | (10 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_VehicleWidth,
+                0,
+                { 0, 0, 0 },
+                0, 0, /* No default value */
+                "vehicleWidth"
+        },
+        { ATF_NOFLAGS, 0, offsetof(struct OriginatingVehicleContainer, longitudinalAcceleration),
+                (ASN_TAG_CLASS_CONTEXT | (11 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_AccelerationComponent,
+                0,
+                { 0, 0, 0 },
+                0, 0, /* No default value */
+                "longitudinalAcceleration"
+        },
+        { ATF_NOFLAGS, 0, offsetof(struct OriginatingVehicleContainer, curvature),
+                (ASN_TAG_CLASS_CONTEXT | (12 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_Curvature,
+                0,
+                { 0, 0, 0 },
+                0, 0, /* No default value */
+                "curvature"
+        },
+        { ATF_NOFLAGS, 0, offsetof(struct OriginatingVehicleContainer, curvatureCalculationMode),
+                (ASN_TAG_CLASS_CONTEXT | (13 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_CurvatureCalculationMode,
+                0,
+                { 0, 0, 0 },
+                0, 0, /* No default value */
+                "curvatureCalculationMode"
+        },
+        { ATF_NOFLAGS, 0, offsetof(struct OriginatingVehicleContainer, yawRate),
+                (ASN_TAG_CLASS_CONTEXT | (14 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_YawRate,
+                0,
+                { 0, 0, 0 },
+                0, 0, /* No default value */
+                "yawRate"
+        },
+        { ATF_POINTER, 7, offsetof(struct OriginatingVehicleContainer, accelerationControl),
+                (ASN_TAG_CLASS_CONTEXT | (15 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_AccelerationControl,
+                0,
+                { 0, 0, 0 },
+                0, 0, /* No default value */
+                "accelerationControl"
+        },
+        { ATF_POINTER, 6, offsetof(struct OriginatingVehicleContainer, lanePosition),
+                (ASN_TAG_CLASS_CONTEXT | (16 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_LanePosition,
+                0,
+                { 0, 0, 0 },
+                0, 0, /* No default value */
+                "lanePosition"
+        },
+        { ATF_POINTER, 5, offsetof(struct OriginatingVehicleContainer, steeringWheelAngle),
+                (ASN_TAG_CLASS_CONTEXT | (17 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_SteeringWheelAngle,
+                0,
+                { 0, 0, 0 },
+                0, 0, /* No default value */
+                "steeringWheelAngle"
+        },
+        { ATF_POINTER, 4, offsetof(struct OriginatingVehicleContainer, lateralAcceleration),
+                (ASN_TAG_CLASS_CONTEXT | (18 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_AccelerationComponent,
+                0,
+                { 0, 0, 0 },
+                0, 0, /* No default value */
+                "lateralAcceleration"
+        },
+        { ATF_POINTER, 3, offsetof(struct OriginatingVehicleContainer, verticalAcceleration),
+                (ASN_TAG_CLASS_CONTEXT | (19 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_AccelerationComponent,
+                0,
+                { 0, 0, 0 },
+                0, 0, /* No default value */
+                "verticalAcceleration"
+        },
+        { ATF_POINTER, 2, offsetof(struct OriginatingVehicleContainer, performanceClass),
+                (ASN_TAG_CLASS_CONTEXT | (20 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_PerformanceClass,
+                0,
+                { 0, 0, 0 },
+                0, 0, /* No default value */
+                "performanceClass"
+        },
+        { ATF_POINTER, 1, offsetof(struct OriginatingVehicleContainer, cenDsrcTollingZone),
+                (ASN_TAG_CLASS_CONTEXT | (21 << 2)),
+                -1,	/* IMPLICIT tag at current level */
+                &asn_DEF_CenDsrcTollingZone,
+                0,
+                { 0, 0, 0 },
+                0, 0, /* No default value */
+                "cenDsrcTollingZone"
+        },
 };
-static const int asn_MAP_OriginatingVehicleContainer_oms_1[] = { 1, 2, 3 };
+static const int asn_MAP_OriginatingVehicleContainer_oms_1[] = {1, 2, 3, 15, 16, 17, 18, 19, 20, 21}; // @VALERIO, @MATTIA
 static const ber_tlv_tag_t asn_DEF_OriginatingVehicleContainer_tags_1[] = {
-	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
+        (ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
 };
 static const asn_TYPE_tag2member_t asn_MAP_OriginatingVehicleContainer_tag2el_1[] = {
-    { (ASN_TAG_CLASS_CONTEXT | (0 << 2)), 0, 0, 0 }, /* orientationAngle */
-    { (ASN_TAG_CLASS_CONTEXT | (1 << 2)), 1, 0, 0 }, /* pitchAngle */
-    { (ASN_TAG_CLASS_CONTEXT | (2 << 2)), 2, 0, 0 }, /* rollAngle */
-    { (ASN_TAG_CLASS_CONTEXT | (3 << 2)), 3, 0, 0 } /* trailerDataSet */
+        { (ASN_TAG_CLASS_CONTEXT | (0 << 2)), 0, 0, 0 }, /* orientationAngle */
+        { (ASN_TAG_CLASS_CONTEXT | (1 << 2)), 1, 0, 0 }, /* pitchAngle */
+        { (ASN_TAG_CLASS_CONTEXT | (2 << 2)), 2, 0, 0 }, /* rollAngle */
+        { (ASN_TAG_CLASS_CONTEXT | (3 << 2)), 3, 0, 0 }, /* trailerDataSet */
+        /* @VALERIO, @MATTIA -> From CAM Basic Container */
+        { (ASN_TAG_CLASS_CONTEXT | (4 << 2)), 4, 0, 0 }, /* stationType */
+        { (ASN_TAG_CLASS_CONTEXT | (5 << 2)), 5, 0, 0 }, /* referencePosition */
+        /* @VALERIO, @MATTIA -> From CAM BasicVehicleContainerHighFrequency */
+        { (ASN_TAG_CLASS_CONTEXT | (6 << 2)), 6, 0, 0 }, /* heading */
+        { (ASN_TAG_CLASS_CONTEXT | (7 << 2)), 7, 0, 0 }, /* speed */
+        { (ASN_TAG_CLASS_CONTEXT | (8 << 2)), 8, 0, 0 }, /* driveDirection */
+        { (ASN_TAG_CLASS_CONTEXT | (9 << 2)), 9, 0, 0 }, /* vehicleLength */
+        { (ASN_TAG_CLASS_CONTEXT | (10 << 2)), 10, 0, 0 }, /* vehicleWidth */
+        { (ASN_TAG_CLASS_CONTEXT | (11 << 2)), 11, 0, 0 }, /* longitudinalAcceleration */
+        { (ASN_TAG_CLASS_CONTEXT | (12 << 2)), 12, 0, 0 }, /* curvature */
+        { (ASN_TAG_CLASS_CONTEXT | (13 << 2)), 13, 0, 0 }, /* curvatureCalculationMode */
+        { (ASN_TAG_CLASS_CONTEXT | (14 << 2)), 14, 0, 0 }, /* yawRate */
+        { (ASN_TAG_CLASS_CONTEXT | (15 << 2)), 15, 0, 0 }, /* accelerationControl */
+        { (ASN_TAG_CLASS_CONTEXT | (16 << 2)), 16, 0, 0 }, /* lanePosition */
+        { (ASN_TAG_CLASS_CONTEXT | (17 << 2)), 17, 0, 0 }, /* steeringWheelAngle */
+        { (ASN_TAG_CLASS_CONTEXT | (18 << 2)), 18, 0, 0 }, /* lateralAcceleration */
+        { (ASN_TAG_CLASS_CONTEXT | (19 << 2)), 19, 0, 0 }, /* verticalAcceleration */
+        { (ASN_TAG_CLASS_CONTEXT | (20 << 2)), 20, 0, 0 }, /* performanceClass */
+        { (ASN_TAG_CLASS_CONTEXT | (21 << 2)), 21, 0, 0 } /* cenDsrcTollingZone */
+
 };
 asn_SEQUENCE_specifics_t asn_SPC_OriginatingVehicleContainer_specs_1 = {
-	sizeof(struct OriginatingVehicleContainer),
-	offsetof(struct OriginatingVehicleContainer, _asn_ctx),
-	asn_MAP_OriginatingVehicleContainer_tag2el_1,
-	4,	/* Count of tags in the map */
-	asn_MAP_OriginatingVehicleContainer_oms_1,	/* Optional members */
-	3, 0,	/* Root/Additions */
-	4,	/* First extension addition */
+        sizeof(struct OriginatingVehicleContainer),
+        offsetof(struct OriginatingVehicleContainer, _asn_ctx),
+        asn_MAP_OriginatingVehicleContainer_tag2el_1,
+        22,	/* Count of tags in the map */ // @VALERIO, @MATTIA
+        asn_MAP_OriginatingVehicleContainer_oms_1,	/* Optional members */
+        10, 0,	/* Root/Additions */ // @VALERIO, @MATTIA
+        22,	/* First extension addition */ // @VALERIO, @MATTIA
 };
 asn_TYPE_descriptor_t asn_DEF_OriginatingVehicleContainer = {
-	"OriginatingVehicleContainer",
-	"OriginatingVehicleContainer",
-	&asn_OP_SEQUENCE,
-	asn_DEF_OriginatingVehicleContainer_tags_1,
-	sizeof(asn_DEF_OriginatingVehicleContainer_tags_1)
-		/sizeof(asn_DEF_OriginatingVehicleContainer_tags_1[0]), /* 1 */
-	asn_DEF_OriginatingVehicleContainer_tags_1,	/* Same as above */
-	sizeof(asn_DEF_OriginatingVehicleContainer_tags_1)
-		/sizeof(asn_DEF_OriginatingVehicleContainer_tags_1[0]), /* 1 */
-	{
+        "OriginatingVehicleContainer",
+        "OriginatingVehicleContainer",
+        &asn_OP_SEQUENCE,
+        asn_DEF_OriginatingVehicleContainer_tags_1,
+        sizeof(asn_DEF_OriginatingVehicleContainer_tags_1)
+        /sizeof(asn_DEF_OriginatingVehicleContainer_tags_1[0]), /* 1 */
+        asn_DEF_OriginatingVehicleContainer_tags_1,	/* Same as above */
+        sizeof(asn_DEF_OriginatingVehicleContainer_tags_1)
+        /sizeof(asn_DEF_OriginatingVehicleContainer_tags_1[0]), /* 1 */
+        {
 #if !defined(ASN_DISABLE_OER_SUPPORT)
-		0,
+                0,
 #endif  /* !defined(ASN_DISABLE_OER_SUPPORT) */
 #if !defined(ASN_DISABLE_UPER_SUPPORT) || !defined(ASN_DISABLE_APER_SUPPORT)
-		0,
+                0,
 #endif  /* !defined(ASN_DISABLE_UPER_SUPPORT) || !defined(ASN_DISABLE_APER_SUPPORT) */
-		SEQUENCE_constraint
-	},
-	asn_MBR_OriginatingVehicleContainer_1,
-	4,	/* Elements count */
-	&asn_SPC_OriginatingVehicleContainer_specs_1	/* Additional specs */
+                SEQUENCE_constraint
+        },
+        asn_MBR_OriginatingVehicleContainer_1,
+        22,	/* Elements count */ // @VALERIO, @MATTIA
+        &asn_SPC_OriginatingVehicleContainer_specs_1	/* Additional specs */
 };
 

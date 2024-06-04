@@ -126,8 +126,8 @@ build_lib_example(
 )
 
 build_lib_example(
-        NAME v2v-CPM+CAM-nrv2x
-        SOURCE_FILES v2v-CPM+CAM-nrv2x.cc
+        NAME v2v-extendedCPM-nrv2x
+        SOURCE_FILES v2v-extendedCPM-nrv2x.cc
         LIBRARIES_TO_LINK
         ${libautomotive}
         ${libnr}

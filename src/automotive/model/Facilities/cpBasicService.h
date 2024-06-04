@@ -172,6 +172,13 @@ private:
    * @return
    */
   bool checkValueOfInformation(std::vector<LDM::returnedVehicleData_t>::iterator it, std::string m_voi_computation_method);
+  /**
+   * @VALERIO, @MATTIA
+   * @brief Evaluate the conditions for the generation of the CPM OriginatingVehicleContainer.
+   * This conditions are the same defined for CAMs in ETSI EN 302 637-2 V1.4.1 (2019-01) Section 6.1.3
+   * @return
+   */
+  bool checkOriginatingVehicleContainerConditions();
   double cartesian_dist(double lon1, double lat1, double lon2, double lat2);
 
   std::function<void(asn1cpp::Seq<CollectivePerceptionMessage>, Address)> m_CPReceiveCallback;  //! Callback function for received CPMs
@@ -237,6 +244,11 @@ private:
   double VoI_Threshold_Dynamics_Speed; //! @VALERIO speed threshold for VoI computation with dynamics-based method
   double VoI_Threshold_Distance; //! @VALERIO threshold for VoI computation with distance-based method
   double VoI_Threshold_ObjectSelfAnnouncement; //! @VALERIO threshold for VoI computation with object self-announcement method
+
+  /* @VALERIO, @MATTIA -> Parameters for originatingVehicleContainer inclusion rules */
+  double m_last_distance; //! @VALERIO, @MATTIA last position included in the OriginatingVehicleContainer
+  double m_last_speed; //! @VALERIO, @MATTIA last speed included in the OriginatingVehicleContainer
+  double m_last_heading; //! @VALERIO, @MATTIA last heading included in the OriginatingVehicleContainer
 };
 }
 #endif // CPBASICSERVICE_H
