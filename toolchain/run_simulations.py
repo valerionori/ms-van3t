@@ -13,6 +13,7 @@ Plots are stored in inside 'ms-van3t/ns-3-dev/Plots/'
 
 import os
 import initializeCSV
+import processData
 import vehicleFlow
 from datetime import datetime
 
@@ -42,7 +43,7 @@ def run_simulation(ns3_path, results_path, maps_path, simTime,
                         f"--bandwidthBandSl={channel_bandwidth*10} "
                         f"--penetrationRate={k} "
                         f"--CPMGenerationPeriod={z} "
-                        f"--sumo-gui={True} "
+                        f"--sumo-gui={False} "
                         f"--SUMOSeed={seed}"
                     )
 
@@ -66,7 +67,7 @@ AoR = 250                                       # EAR Measurements Start Time
 s = [50, 75, 100]                               # Simulated scenarios (number of ITS-Ss)
 r = ['ETSI']                                    # Simulated Value of Information computation method
 channel_bandwidth = 10                          # SL Channel Bandwidth in MHz
-penetration_rate = [0.2, 0.5, 1]                # Market Penetration Rate (MPR)
+penetration_rate = [0.2, 0.5, 0.8]              # Market Penetration Rate (MPR)
 T_CpmGen_ms = [100, 1000]                       # CPM Generation Period
 seeds = [2785, 7277, 5242, 6516, 9689]          # Simulations seed
 
@@ -91,10 +92,11 @@ for i in seeds:
                    channel_bandwidth, penetration_rate, T_CpmGen_ms, s, r, i, seed_counter)
 
     # Compute metrics
-    initializeCSV.compute_average_packet_size(results_path, s, r, penetration_rate, T_CpmGen_ms)
-    initializeCSV.compute_average_transmitted_cpm_vehicle_second(results_path, s, r, penetration_rate, T_CpmGen_ms, simTime)
-    initializeCSV.compute_transmitted_cpm(results_path, s, r, penetration_rate, T_CpmGen_ms)
-    initializeCSV.compute_transmitted_cam(results_path, s, r, penetration_rate, T_CpmGen_ms)
+    processData.compute_average_cpm_packet_size(results_path, s, r, penetration_rate, T_CpmGen_ms)
+    processData.compute_average_cam_packet_size(results_path, s, r, penetration_rate, T_CpmGen_ms)
+    processData.compute_average_transmitted_cpm_vehicle_second(results_path, s, r, penetration_rate, T_CpmGen_ms, simTime)
+    processData.compute_transmitted_cpm(results_path, s, r, penetration_rate, T_CpmGen_ms)
+    processData.compute_transmitted_cam(results_path, s, r, penetration_rate, T_CpmGen_ms)
 
     os.chdir(ns3_path)
     os.makedirs("Simulation_" + str(toolchain_start), exist_ok=True)
