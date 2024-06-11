@@ -37,6 +37,7 @@ def csv_paths_initialization(ns3_path, results_path, seed):
     os.makedirs("EAR")
     os.makedirs("CBR")
     os.makedirs("RDM")
+    os.makedirs("AoI")
 
 
 def csv_ear_initialization(results_path, numberOfUEs, redundancy, penetrationRate, cpm_gen_period):
@@ -44,11 +45,12 @@ def csv_ear_initialization(results_path, numberOfUEs, redundancy, penetrationRat
     os.chdir(results_path + "/EAR")
 
     # Move CSV files into proper directory
-    os.makedirs(str(numberOfUEs) + '/' + str(redundancy) + '/' + str(penetrationRate) + '/' + str(cpm_gen_period))
+    target_dir = os.path.join(str(numberOfUEs), str(redundancy), str(penetrationRate), str(cpm_gen_period))
+    os.makedirs(target_dir, exist_ok=True)
     files = os.listdir()
     for i in files:
-        os.rename(i, str(numberOfUEs) + '/' + str(redundancy) + '/' + str(penetrationRate) + '/' +
-                  str(cpm_gen_period) + '/' + i)
+        if os.path.isfile(i) and i.startswith('EAR'):
+            os.rename(i, os.path.join(target_dir, i))
 
 
 def csv_traces_initialization(results_path, numberOfUEs, redundancy, penetrationRate, cpm_gen_period):
@@ -58,7 +60,7 @@ def csv_traces_initialization(results_path, numberOfUEs, redundancy, penetration
     # Generate a new CSV to store the Average Packet Size (CPM) for each simulation
     try:
         file = open("Average_PacketSizeCPM.csv", "x")
-        file.write("numberOfUEs,RMR,MPR,T_Cpm_Gen,Average_CPM_PacketSize_bytes\n")
+        file.write("VehicleDensity,RMR,MPR,T_Cpm_Gen,Average_CPM_PacketSize_bytes\n")
         file.close()
     except FileExistsError:
         print("CSV Update.")
@@ -66,7 +68,7 @@ def csv_traces_initialization(results_path, numberOfUEs, redundancy, penetration
     # Generate a new CSV to store the Average Packet Size (CAM) for each simulation
     try:
         file = open("Average_PacketSizeCAM.csv", "x")
-        file.write("numberOfUEs,RMR,MPR,T_Cpm_Gen,Average_CAM_PacketSize_bytes\n")
+        file.write("VehicleDensity,RMR,MPR,T_Cpm_Gen,Average_CAM_PacketSize_bytes\n")
         file.close()
     except FileExistsError:
         print("CSV Update.")
@@ -74,7 +76,7 @@ def csv_traces_initialization(results_path, numberOfUEs, redundancy, penetration
     # Generate a new CSV to store the Average Transmitted CPMs/vehicle/second for each simulation
     try:
         file = open("Average_TransmittedCPMs.csv", "x")
-        file.write("numberOfUEs,RMR,MPR,T_Cpm_Gen,Average_Transmitted_CPMs_vehicle_second\n")
+        file.write("VehicleDensity,RMR,MPR,T_Cpm_Gen,Average_Transmitted_CPMs_vehicle_second\n")
         file.close()
     except FileExistsError:
         print("CSV Update.")
@@ -82,7 +84,7 @@ def csv_traces_initialization(results_path, numberOfUEs, redundancy, penetration
     # Generate a new CSV to store the Transmitted CPMs for each simulation
     try:
         file = open("TransmittedCPMs.csv", "x")
-        file.write("numberOfUEs,RMR,MPR,T_Cpm_Gen,Transmitted_CPMs\n")
+        file.write("VehicleDensity,RMR,MPR,T_Cpm_Gen,Transmitted_CPMs\n")
         file.close()
     except FileExistsError:
         print("CSV Update.")
@@ -90,14 +92,15 @@ def csv_traces_initialization(results_path, numberOfUEs, redundancy, penetration
     # Generate a new CSV to store the Transmitted CAMs for each simulation
     try:
         file = open("TransmittedCAMs.csv", "x")
-        file.write("numberOfUEs,RMR,MPR,T_Cpm_Gen,Transmitted_CAMs\n")
+        file.write("VehicleDensity,RMR,MPR,T_Cpm_Gen,Transmitted_CAMs\n")
         file.close()
     except FileExistsError:
         print("CSV Update.")
 
     # Move CSV files into proper directory
-    os.makedirs(str(numberOfUEs) + '/' + str(redundancy) + '/' + str(penetrationRate) + '/' + str(cpm_gen_period))
+    target_dir = os.path.join(str(numberOfUEs), str(redundancy), str(penetrationRate), str(cpm_gen_period))
+    os.makedirs(target_dir, exist_ok=True)
     files = os.listdir()
     for i in files:
-        os.rename(i, str(numberOfUEs) + '/' + str(redundancy) + '/' + str(penetrationRate) + '/' +
-                  str(cpm_gen_period) + '/' + i)
+        if os.path.isfile(i) and i.startswith('Trace'):
+            os.rename(i, os.path.join(target_dir, i))

@@ -20,7 +20,7 @@ from datetime import datetime
 
 def run_simulation(ns3_path, results_path, maps_path, simTime,
                    AoR, channel_bandwidth, penetration_rate, T_CpmGen_ms,
-                   scenarios, redundancy, seed, seed_counter):
+                   prr_distance, scenarios, redundancy, seed, seed_counter):
 
     application = "v2v-extendedCPM-nrv2x"
     counter = 0
@@ -43,6 +43,7 @@ def run_simulation(ns3_path, results_path, maps_path, simTime,
                         f"--bandwidthBandSl={channel_bandwidth*10} "
                         f"--penetrationRate={k} "
                         f"--CPMGenerationPeriod={z} "
+                        f"--baseline={prr_distance} "
                         f"--sumo-gui={False} "
                         f"--SUMOSeed={seed}"
                     )
@@ -64,12 +65,13 @@ def run_simulation(ns3_path, results_path, maps_path, simTime,
 # Define Toolchain parameters
 simTime = 30                                    # Simulation Time
 AoR = 250                                       # EAR Measurements Start Time
-s = [50, 75, 100]                               # Simulated scenarios (number of ITS-Ss)
+s = [20, 40, 60, 80, 100]                       # Simulated scenarios (vehicles/km)
 r = ['ETSI']                                    # Simulated Value of Information computation method
 channel_bandwidth = 10                          # SL Channel Bandwidth in MHz
-penetration_rate = [0.2, 0.5, 0.8]              # Market Penetration Rate (MPR)
+penetration_rate = [0.2, 0.5, 1]                # Market Penetration Rate (MPR)
 T_CpmGen_ms = [100, 1000]                       # CPM Generation Period
-seeds = [2785, 7277, 5242, 6516, 9689]          # Simulations seed
+prr_distance = 150                              # Distance used to compute the PRR
+seeds = [2785]                                  # Simulations seed
 
 # Take the Start Time of the Toolchain
 toolchain_start = datetime.now()
@@ -89,7 +91,7 @@ for i in seeds:
 
     # Run the simulations for different combination of parameters
     run_simulation(ns3_path, results_path, maps_path, simTime, AoR,
-                   channel_bandwidth, penetration_rate, T_CpmGen_ms, s, r, i, seed_counter)
+                   channel_bandwidth, penetration_rate, T_CpmGen_ms, prr_distance, s, r, i, seed_counter)
 
     # Compute metrics
     processData.compute_average_cpm_packet_size(results_path, s, r, penetration_rate, T_CpmGen_ms)
