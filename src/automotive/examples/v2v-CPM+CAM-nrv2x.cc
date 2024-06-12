@@ -229,6 +229,57 @@ computeAwarenessRatio (Ptr<TraciClient> sumoClient, double AoR_radius)
   Simulator::Schedule(Seconds(0.2), &computeAwarenessRatio, sumoClient, AoR_radius);
 }
 
+/**
+ * @VALERIO
+ *
+ * @brief This function schedules the measurement of the Average Age of Information (AoI).
+ *
+ * AoI measures the 'freshness' of the information.
+ * In this case, information of objects inside the LDM of each vehicle are evaluated.
+ * The timestamp of an object is updates each time it is perceived by local sensors, CAM or CPM.
+ * AoI is computed as the difference between the current time (measurement time) and the timestamp.
+ *
+ */
+std::vector<double> Average_AoI_Overall = {};
+void
+computeAgeOfInformation ()
+{
+  for(const auto& i:numberOfUEsEnabled)
+  {
+    int64_t AoI = 0;
+    std::vector<int64_t> timestamp = {};
+
+    /* Read the CSV file with the AoI of the Objects in the LDM */
+    std::string aoi_csv_name = "Results/AoI/AoI-" + i + ".csv";
+    std::ifstream aoi_csv(aoi_csv_name);
+    std::string line;
+
+    /* Read the last timestamp of each Object in the LDM of vehicle i */
+    while (std::getline(aoi_csv, line))
+    {
+      std::stringstream ss(line);
+      std::string value;
+
+      while (std::getline(ss, value, ','))
+      {
+        timestamp.push_back(std::stoll(value));
+      }
+    }
+
+    /* Compute the AoI of each Object in the LDM of vehicle i */
+    for (auto &it: timestamp)
+    {
+      AoI += (Simulator::Now().GetMicroSeconds() - it);
+    }
+
+    if (!timestamp.empty())
+      Average_AoI_Overall.push_back((double) AoI / (double) timestamp.size());
+  }
+
+  // Schedule the next measurement
+  Simulator::Schedule(Seconds(0.1), &computeAgeOfInformation);
+}
+
 
 int
 main (int argc, char *argv[])
@@ -930,6 +981,7 @@ main (int argc, char *argv[])
   if(m_metric_sup)
   {
     Simulator::Schedule(Seconds(4.0), &computeAwarenessRatio, sumoClient, AoR_radius);
+    Simulator::Schedule(Seconds(4.0), &computeAgeOfInformation);
     Simulator::Schedule(Seconds(4.0), std::bind(&MetricSupervisor::startCheckCBR, metSup));
   }
 
@@ -942,6 +994,10 @@ main (int argc, char *argv[])
 
   if(m_metric_sup)
   {
+
+    /** @VALERIO Compute vehicle density (veh/km) */
+    double vehicle_density = (double) numberOfNodes / 0.75;
+
     /** @VALERIO PRR data processing */
     std::ofstream csv_ofstream_prr;
     std::string csv_name_prr = "Results/PRR/Average_PRR.csv";
@@ -955,11 +1011,11 @@ main (int argc, char *argv[])
     {
       // The file does not exist yet
       csv_ofstream_prr.open(csv_name_prr);
-      csv_ofstream_prr << "numberOfUEs,RMR,MPR,T_Cpm_Gen,Average PRR,Average Latency" << std::endl;
+      csv_ofstream_prr << "VehicleDensity,RMR,MPR,T_Cpm_Gen,Average PRR,PRR Distance,Average Latency" << std::endl;
     }
 
     // Fill the CVS file
-    csv_ofstream_prr << numberOfNodes << "," << VoIcomputationMethod << "," << penetrationRate << "," << T_GenCpm << "," << metSup->getAveragePRR_overall() << "," << metSup->getAverageLatency_overall () << std::endl;
+    csv_ofstream_prr << vehicle_density << "," << VoIcomputationMethod << "," << penetrationRate << "," << T_GenCpm << "," << metSup->getAveragePRR_overall() << "," << m_baseline_prr << "," << metSup->getAverageLatency_overall () << std::endl;
 
     std::cout << "Average PRR: " << metSup->getAveragePRR_overall() << std::endl;
     std::cout << "Average latency (ms): " << metSup->getAverageLatency_overall () << std::endl;
@@ -978,11 +1034,11 @@ main (int argc, char *argv[])
     {
       // The file does not exist yet
       csv_ofstream_cbr.open(csv_name_cbr);
-      csv_ofstream_cbr << "numberOfUEs,RMR,MPR,T_Cpm_Gen,Average CBR" << std::endl;
+      csv_ofstream_cbr << "VehicleDensity,RMR,MPR,T_Cpm_Gen,Average CBR" << std::endl;
     }
 
     // Fill the CVS file
-    csv_ofstream_cbr << numberOfNodes << "," << VoIcomputationMethod << "," << penetrationRate << "," << T_GenCpm << "," << metSup->getAverageCBROverall() << std::endl;
+    csv_ofstream_cbr << vehicle_density << "," << VoIcomputationMethod << "," << penetrationRate << "," << T_GenCpm << "," << metSup->getAverageCBROverall() << std::endl;
 
     std::cout << "Average CBR: " << metSup->getAverageCBROverall() << std::endl;
 
@@ -999,7 +1055,7 @@ main (int argc, char *argv[])
     {
       // The file does not exist yet
       csv_ofstream_ear.open(csv_name_ear);
-      csv_ofstream_ear << "numberOfUEs,RMR,MPR,T_Cpm_Gen,Average EAR" << std::endl;
+      csv_ofstream_ear << "VehicleDensity,RMR,MPR,T_Cpm_Gen,Average EAR" << std::endl;
     }
 
     // Compute the Average EAR
@@ -1012,9 +1068,39 @@ main (int argc, char *argv[])
       Average_EAR /= (double) Average_EAR_Overall.size();
 
     // Fill the CVS file
-    csv_ofstream_ear << numberOfNodes << "," << VoIcomputationMethod << "," << penetrationRate << "," << T_GenCpm << "," << Average_EAR << std::endl;
+    csv_ofstream_ear << vehicle_density << "," << VoIcomputationMethod << "," << penetrationRate << "," << T_GenCpm << "," << Average_EAR << std::endl;
 
     std::cout << "Average EAR: " << Average_EAR << std::endl;
+
+    /** @VALERIO AoI data processing */
+    std::ofstream csv_ofstream_aoi;
+    std::string csv_name_aoi = "Results/EAR/Average_AoI.csv";
+
+    if(access(csv_name_aoi.c_str(),F_OK)!=-1)
+    {
+      // The file already exists
+      csv_ofstream_aoi.open(csv_name_aoi,std::ofstream::out | std::ofstream::app);
+    }
+    else
+    {
+      // The file does not exist yet
+      csv_ofstream_aoi.open(csv_name_aoi);
+      csv_ofstream_aoi << "VehicleDensity,RMR,MPR,T_Cpm_Gen,Average AoI" << std::endl;
+    }
+
+    // Compute the Average EAR
+    double Average_AoI = 0;
+    for(auto it:Average_AoI_Overall)
+    {
+      Average_AoI += it;
+    }
+    if(!Average_AoI_Overall.empty())
+      Average_AoI /= (double) Average_EAR_Overall.size();
+
+    // Fill the CVS file
+    csv_ofstream_aoi << vehicle_density << "," << VoIcomputationMethod << "," << penetrationRate << "," << T_GenCpm << "," << Average_AoI / 1000 << std::endl;
+
+    std::cout << "Average AoI: " << Average_AoI / 1000 << " ms" <<  std::endl;
   }
 
   return 0;

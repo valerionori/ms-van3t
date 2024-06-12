@@ -112,7 +112,7 @@ def compute_average_transmitted_cpm_vehicle_second(results_path, numberOfUEs, re
                                     avg_tx_cpm += 1
 
                     # Compute the Average Transmitted CPMs/vehicle/second for this simulation
-                    avg_tx_cpm = avg_tx_cpm / len(files) /  simTime
+                    avg_tx_cpm = avg_tx_cpm / len(files) / simTime
                     print(f"Average Transmitted CPMs/vehicle/second: {avg_tx_cpm}")
 
                     # Store the Average Transmitted CPMs/vehicle/second for each simulation in a CSV
@@ -209,21 +209,21 @@ def clear_csv(results_path):
 
 
 # Post-processing (insert desired directory with results to be processed)
-results_path = os.path.expanduser(
-    '/home/ready-lab/CLionProjects/ms-van3t/ns-3-dev/Simulation_EXTENDED_2024-06-03 18:11:38.523070/Seed_1')
-
-# Define Toolchain parameters
-simTime = 30                                    # Simulation Time
-s = [50, 75, 100]                               # Simulated scenarios (number of ITS-Ss)
-r = ['ETSI']                                    # Simulated Value of Information computation method
-penetration_rate = [0.2, 0.5, 0.8]                # Market Penetration Rate (MPR)
-T_CpmGen_ms = [100, 1000]                       # CPM Generation Period
-
-# Clear CSV files (clear ONLY Traces CSVs)
-clear_csv(results_path + '/Traces')
-# Compute metrics
-compute_average_cpm_packet_size(results_path, s, r, penetration_rate, T_CpmGen_ms)
-compute_average_cam_packet_size(results_path, s, r, penetration_rate, T_CpmGen_ms)
-compute_average_transmitted_cpm_vehicle_second(results_path, s, r, penetration_rate, T_CpmGen_ms, simTime)
-compute_transmitted_cpm(results_path, s, r, penetration_rate, T_CpmGen_ms)
-compute_transmitted_cam(results_path, s, r, penetration_rate, T_CpmGen_ms)
+# results_path = os.path.expanduser(
+#     '/home/ready-lab/CLionProjects/ms-van3t/ns-3-dev/Simulation_EXTENDED_2024-06-03 18:11:38.523070/Seed_1')
+#
+# # Define Toolchain parameters
+# simTime = 30                                    # Simulation Time
+# s = [50, 75, 100]                               # Simulated scenarios (number of ITS-Ss)
+# r = ['ETSI']                                    # Simulated Value of Information computation method
+# penetration_rate = [0.2, 0.5, 0.8]                # Market Penetration Rate (MPR)
+# T_CpmGen_ms = [100, 1000]                       # CPM Generation Period
+#
+# # Clear CSV files (clear ONLY Traces CSVs)
+# clear_csv(results_path + '/Traces')
+# # Compute metrics
+# compute_average_cpm_packet_size(results_path, s, r, penetration_rate, T_CpmGen_ms)
+# compute_average_cam_packet_size(results_path, s, r, penetration_rate, T_CpmGen_ms)
+# compute_average_transmitted_cpm_vehicle_second(results_path, s, r, penetration_rate, T_CpmGen_ms, simTime)
+# compute_transmitted_cpm(results_path, s, r, penetration_rate, T_CpmGen_ms)
+# compute_transmitted_cam(results_path, s, r, penetration_rate, T_CpmGen_ms)

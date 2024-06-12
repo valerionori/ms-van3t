@@ -7,7 +7,9 @@ from random import randrange
 
 
 # This function generates a FIXED .rou.xml with a specified number of UEs
-def fixedFlow(numberOfUEs, maps_path):
+def fixedFlow(vehicleDensity, maps_path):
+
+    numberOfUEs = int(vehicleDensity * 0.75)
 
     routes = ET.Element('routes')
 

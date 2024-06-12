@@ -83,6 +83,7 @@ namespace ns3 {
 
     /* @VALERIO -> Schedule AoR check */
     m_event_checkAreaOfRelevance = Simulator::Schedule(MilliSeconds(LOG_FREQ+(desync*100)),&LDM::checkAreaOfRelevance,this);
+    m_event_checkAgeOfInformation = Simulator::Schedule(MilliSeconds(LOG_FREQ+(desync*100)),&LDM::checkAgeOfInformation,this);
 
     /* @VALERIO -> AoR Initialization */
     AoR_radius = 250;
@@ -97,6 +98,7 @@ namespace ns3 {
       Simulator::Cancel(m_event_deleteOlderThan);
       Simulator::Cancel(m_event_writeContents);
       Simulator::Cancel (m_event_checkAreaOfRelevance); // @VALERIO
+      Simulator::Cancel(m_event_checkAgeOfInformation); // @VALERIO
       clear();
   }
 
@@ -715,5 +717,25 @@ namespace ns3 {
     m_csv_ofstream_aor.close ();
 
     m_event_checkAreaOfRelevance = Simulator::Schedule(MilliSeconds(LOG_FREQ),&LDM::checkAreaOfRelevance,this);
+  }
+
+  /* @VALERIO */
+  void
+  LDM::checkAgeOfInformation ()
+  {
+    if (m_client == nullptr)
+      return;
+
+    /* Fill the CSV file */
+    m_csv_name_aoi = "Results/AoI/AoI-" + m_id + ".csv";
+    m_csv_ofstream_aoi.open (m_csv_name_aoi, std::ios::out);
+    for (const auto& it : m_LDM) {
+      m_csv_ofstream_aoi << it.second.vehData.timestamp_us << ",";
+    }
+
+    m_csv_ofstream_aoi << std::endl;
+    m_csv_ofstream_aoi.close ();
+
+    m_event_checkAgeOfInformation = Simulator::Schedule(MilliSeconds(LOG_FREQ),&LDM::checkAgeOfInformation,this);
   }
 }

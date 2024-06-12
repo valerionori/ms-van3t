@@ -185,6 +185,13 @@ public:
      */
     void checkAreaOfRelevance();
 
+    /**
+     * @VALERIO
+     *
+     * @brief This function can be used to check the Age of Information (AoI) of Objects in the LDM.
+     */
+    void checkAgeOfInformation();
+
     void cleanup();
 
     /**
@@ -282,6 +289,7 @@ private:
         EventId m_event_writeContents;
         EventId m_event_updatePolygons;
         EventId m_event_checkAreaOfRelevance; //! @VALERIO
+        EventId m_event_checkAgeOfInformation; //! @VALERIO
 
 	double m_avg_dwell = 0.0;
 	int m_dwell_count = 0;
@@ -292,6 +300,9 @@ private:
 
   std::string m_csv_name_aor; //!< @VALERIO CSV file name for AoR measurements
   std::ofstream m_csv_ofstream_aor; //!< @VALERIO CSV log stream, created using m_csv_name_aor
+
+  std::string m_csv_name_aoi; //!< @VALERIO CSV file name for AoI measurements
+  std::ofstream m_csv_ofstream_aoi; //!< @VALERIO CSV log stream, created using m_csv_name_aoI
 
   std::string m_csv_name_rdm; //!< @VALERIO CSV file name for RDM
   std::ofstream m_csv_ofstream_rdm; //!< @VALERIO CSV log stream, created using m_csv_name_rdm
