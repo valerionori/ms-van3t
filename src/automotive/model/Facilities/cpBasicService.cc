@@ -552,6 +552,8 @@ namespace ns3 {
     asn1cpp::setField (originatingVehicleContainer->orientationAngle.confidence,
                        cpm_mandatory_data.heading.getConfidence ());
 
+    OriginatingVehContainerExtended = false;
+
     if (checkOriginatingVehicleContainerConditions())
     {
       asn1cpp::setField (originatingVehicleContainer->stationType,
@@ -602,16 +604,12 @@ namespace ns3 {
       asn1cpp::setField(originatingVehicleContainer->yawRate.yawRateConfidence,
                         cpm_mandatory_data.yawRate.getConfidence ());
 
-      asn1cpp::setField (wrappedCpmContainer->containerData.present,
-                         WrappedCpmContainer__containerData_PR_OriginatingVehicleContainer);
-      asn1cpp::setField (wrappedCpmContainer->containerData.choice.OriginatingVehicleContainer,
-                         originatingVehicleContainer);
-      asn1cpp::sequenceof::pushList (cpm->payload.cpmContainers, wrappedCpmContainer);
-
       // Store all the "previous" values used in checkCamConditions()
       m_last_distance = m_vdp->getTravelledDistance ();
       m_last_speed = m_vdp->getSpeedValue ();
       m_last_heading = m_vdp->getHeadingValue ();
+
+      OriginatingVehContainerExtended = true;
     }
 
     asn1cpp::setField (wrappedCpmContainer->containerData.present,
@@ -659,7 +657,7 @@ namespace ns3 {
       {
         //If no sensorInformationContainer and no perceivedObjectsContainer
         SensorInfoContainerIncluded = false;
-        if (numberOfPOs == 0 && !checkOriginatingVehicleContainerConditions())
+        if (numberOfPOs == 0 && !OriginatingVehContainerExtended)
           return; //No CPM is generated in the current cycle
       }
 
@@ -711,13 +709,14 @@ namespace ns3 {
     std::ifstream m_csv_ifstream_trace(m_csv_name_trace);
     m_csv_ofstream_trace.open(m_csv_name_trace, std::ios::app);
     if (!m_csv_ifstream_trace.is_open())
-      m_csv_ofstream_trace << "messageId,stationId,timestamp,size(bytes),numberOfPOs,SICincluded" << std::endl;
+      m_csv_ofstream_trace << "messageId,stationId,timestamp,size(bytes),numberOfPOs,SICincluded,OVCextended" << std::endl;
     m_csv_ofstream_trace << cpm->header.messageId << ","
                          << cpm->header.stationId << ","
                          << lastCpmGen << ","
                          << encode_result.size() << ","
                          << numberOfPOs << ","
                          << SensorInfoContainerIncluded << ","
+                         << OriginatingVehContainerExtended << ","
                          << std::endl;
 
     m_csv_ofstream_trace.close();

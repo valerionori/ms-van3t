@@ -422,6 +422,28 @@ namespace ns3
                     }
               }
         }
+
+        /* @VALERIO, @MATTIA -> Insert in the LDM also Transmitting ITS-S data */
+        if(present == WrappedCpmContainer__containerData_PR_OriginatingVehicleContainer)
+        {
+          auto OV_seq = asn1cpp::getSeq(wrappedContainer->containerData.choice.OriginatingVehicleContainer, OriginatingVehicleContainer);
+          LDM::returnedVehicleData_t OV_data;
+
+          if(wrappedContainer->containerData.choice.OriginatingVehicleContainer.stationType != 0)
+          {
+            //If the transmitting ITS-S is already in local copy of vLDM
+            if(m_LDM->lookup(asn1cpp::getField(cpm->header.stationId,long),OV_data) == LDM::LDM_OK)
+            {
+              //Add the new data to the LDM
+              m_LDM->insert (OV_data.vehData);
+            }
+            else
+            {
+              //Translate CPM data to LDM format
+              m_LDM->insert(translateCPMdataExtended(cpm, OV_seq));
+            }
+          }
+        }
       }
   }
 
@@ -456,6 +478,30 @@ namespace ns3
     retval.perceivedBy.setData(asn1cpp::getField(cpm->header.stationId,long));
 
         return retval;
+  }
+
+  /* @VALERIO, @MATTIA -> Translate data from the extended OriginatingVehicleContainer */
+  vehicleData_t
+  emergencyVehicleAlert::translateCPMdataExtended(asn1cpp::Seq<CollectivePerceptionMessage> cpm,
+                                                  asn1cpp::Seq<OriginatingVehicleContainer> originatingVehicle)
+  {
+    /* From CABasicService::vLDM_handler defined in caBasicService.cc */
+    vehicleData_t retval;
+    retval.detected = false;
+    retval.stationType = asn1cpp::getField(originatingVehicle->stationType, long);
+    retval.stationID = asn1cpp::getField(cpm->header.stationId,uint64_t);
+    retval.ID = std::to_string(retval.stationID);
+    retval.lat = asn1cpp::getField(originatingVehicle->referencePosition.latitude,double)/(double)DOT_ONE_MICRO;
+    retval.lon = asn1cpp::getField(originatingVehicle->referencePosition.longitude,double)/(double)DOT_ONE_MICRO;
+    retval.elevation = asn1cpp::getField(originatingVehicle->referencePosition.altitude.altitudeValue,double)/(double)CENTI;
+    retval.heading = asn1cpp::getField(originatingVehicle->heading.headingValue,double)/(double)DECI;
+    retval.speed_ms = asn1cpp::getField(originatingVehicle->speed.speedValue,double)/(double)CENTI;
+    retval.timestamp_us = Simulator::Now ().GetMicroSeconds ();
+
+    retval.vehicleWidth = OptionalDataItem<long>(asn1cpp::getField(originatingVehicle->vehicleWidth,long));
+    retval.vehicleLength = OptionalDataItem<long>(asn1cpp::getField(originatingVehicle->vehicleLength.vehicleLengthValue,long));
+
+    return retval;
   }
 
 

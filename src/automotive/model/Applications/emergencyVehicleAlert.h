@@ -119,6 +119,15 @@ class emergencyVehicleAlert : public Application
 
     vehicleData_t translateCPMV1data(asn1cpp::Seq<CPMV1> cpm, int objectIndex);
     vehicleData_t translateCPMdata(asn1cpp::Seq<CollectivePerceptionMessage> cpm,asn1cpp::Seq<PerceivedObject> object, int objectIndex);
+    /**
+     * @VALERIO, @MATTIA
+     *
+     * @brief This function translate the data in the OriginatingVehicleContainer and updates the LDM
+     * @param cpm
+     * @param originatingVehicle
+     * @return
+     */
+    vehicleData_t translateCPMdataExtended(asn1cpp::Seq<CollectivePerceptionMessage> cpm, asn1cpp::Seq<OriginatingVehicleContainer> originatingVehicle);
 
     virtual void StartApplication (void);
     virtual void StopApplication (void);

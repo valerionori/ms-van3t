@@ -227,6 +227,7 @@ private:
   EventId m_event_cpmSend;
 
   bool SensorInfoContainerIncluded; //!< @VALERIO check if the Sensor Information Container is included in the CPM
+  bool OriginatingVehContainerExtended; //!< @VALERIO check if the Originating Vehicle Container includes additional data
 
   std::string m_csv_name_trace; //!< @VALERIO @MATTIA CSV file name for CPM traces
   std::ofstream m_csv_ofstream_trace; //!< @VALERIO @MATTIA CSV log stream (CPM), created using m_csv_name_trace

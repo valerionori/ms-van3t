@@ -83,7 +83,7 @@ namespace ns3 {
 
     /* @VALERIO -> Schedule AoR check */
     m_event_checkAreaOfRelevance = Simulator::Schedule(MilliSeconds(LOG_FREQ+(desync*100)),&LDM::checkAreaOfRelevance,this);
-    m_event_checkAgeOfInformation = Simulator::Schedule(MilliSeconds(LOG_FREQ+(desync*100)),&LDM::checkAgeOfInformation,this);
+    //m_event_checkAgeOfInformation = Simulator::Schedule(MilliSeconds(LOG_FREQ+(desync*100)),&LDM::checkAgeOfInformation,this);
 
     /* @VALERIO -> AoR Initialization */
     AoR_radius = 250;
@@ -98,7 +98,7 @@ namespace ns3 {
       Simulator::Cancel(m_event_deleteOlderThan);
       Simulator::Cancel(m_event_writeContents);
       Simulator::Cancel (m_event_checkAreaOfRelevance); // @VALERIO
-      Simulator::Cancel(m_event_checkAgeOfInformation); // @VALERIO
+      //Simulator::Cancel(m_event_checkAgeOfInformation); // @VALERIO
       clear();
   }
 
@@ -702,6 +702,14 @@ namespace ns3 {
         if(sqrt(pow((egoPosXY.x-objPosXY.x),2) + pow((egoPosXY.y-objPosXY.y),2)) <= AoR_radius)
         {
           m_AoR.insert (m_AoR.end(), sID);
+          /* Evaluate the Age of Information of objects within the AoR */
+          m_csv_name_aoi = "Results/AoI/AoI-" + m_id + ".csv";
+
+          m_csv_ofstream_aoi.open (m_csv_name_aoi, std::ios::out);
+          m_csv_ofstream_aoi << it.second.vehData.timestamp_us << ",";
+          m_csv_ofstream_aoi << std::endl;
+
+          m_csv_ofstream_aoi.close ();
         }
       }
     }
