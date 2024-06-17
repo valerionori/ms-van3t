@@ -68,10 +68,10 @@ AoR = 250                                       # EAR Measurements Start Time
 s = [20, 40, 60, 80, 100]                       # Simulated scenarios (vehicles/km)
 r = ['ETSI']                                    # Simulated Value of Information computation method
 channel_bandwidth = 10                          # SL Channel Bandwidth in MHz
-penetration_rate = [0.2, 0.5, 1]                # Market Penetration Rate (MPR)
+penetration_rate = [0.2, 0.5, 0.8]              # Market Penetration Rate (MPR)
 T_CpmGen_ms = [100, 1000]                       # CPM Generation Period
 prr_distance = 150                              # Distance used to compute the PRR
-seeds = [2785]                                  # Simulations seed
+seeds = [2785, 1651, 9599, 3164, 4146]          # Simulations seed
 
 # Take the Start Time of the Toolchain
 toolchain_start = datetime.now()
