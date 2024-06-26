@@ -44,14 +44,14 @@ def run_simulation(ns3_path, results_path, maps_path, simTime,
                         f"--penetrationRate={k} "
                         f"--CPMGenerationPeriod={z} "
                         f"--baseline={prr_distance} "
-                        f"--sumo-gui={False} "
+                        f"--sumo-gui={True} "
                         f"--SUMOSeed={seed}"
                     )
 
                     # Update Simulation Number
                     counter = counter + 1
                     numberOfSimulations = len(scenarios)*len(penetration_rate)*len(T_CpmGen_ms)*len(redundancy)
-                    print(f'Simulation n. {counter}/{numberOfSimulations}, Seed: {seed_counter + 1}/5')
+                    print(f'Simulation n. {counter}/{numberOfSimulations}, Seed: {seed_counter + 1}')
 
                     # Run the Simulation
                     os.chdir(ns3_path)
@@ -68,8 +68,8 @@ AoR = 250                                       # EAR Measurements Start Time
 s = [20, 40, 60, 80, 100]                       # Simulated scenarios (vehicles/km)
 r = ['ETSI']                                    # Simulated Value of Information computation method
 channel_bandwidth = 10                          # SL Channel Bandwidth in MHz
-penetration_rate = [0.2, 0.5, 1]                # Market Penetration Rate (MPR)
-T_CpmGen_ms = [100, 1000]                       # CPM Generation Period
+penetration_rate = [0.2, 0.5, 0.8]              # Market Penetration Rate (MPR)
+T_CpmGen_ms = [100]                             # CPM Generation Period
 prr_distance = 150                              # Distance used to compute the PRR
 seeds = [2785]                                  # Simulations seed
 

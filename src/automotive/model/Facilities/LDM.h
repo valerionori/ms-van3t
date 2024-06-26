@@ -295,11 +295,15 @@ private:
 	int m_dwell_count = 0;
   StationType_t m_station_type;
 
-  std::vector<std::string> m_AoR; //! @VALERIO vector to store AoR values
+  std::vector<std::string> m_AoR_known; //! @VALERIO vector to store known objects within the AoR
+  std::vector<std::string> m_AoR; //! @VALERIO vector to store objects within the AoR
   double AoR_radius; //! @VALERIO AoR radius in meters
 
   std::string m_csv_name_aor; //!< @VALERIO CSV file name for AoR measurements
   std::ofstream m_csv_ofstream_aor; //!< @VALERIO CSV log stream, created using m_csv_name_aor
+
+  std::string m_csv_name_ear;
+  std::ofstream  m_csv_ofstream_ear;
 
   std::string m_csv_name_aoi; //!< @VALERIO CSV file name for AoI measurements
   std::ofstream m_csv_ofstream_aoi; //!< @VALERIO CSV log stream, created using m_csv_name_aoI

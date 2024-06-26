@@ -48,8 +48,12 @@ def csv_ear_initialization(results_path, numberOfUEs, redundancy, penetrationRat
     target_dir = os.path.join(str(numberOfUEs), str(redundancy), str(penetrationRate), str(cpm_gen_period))
     os.makedirs(target_dir, exist_ok=True)
     files = os.listdir()
+
     for i in files:
         if os.path.isfile(i) and i.startswith('EAR'):
+            os.rename(i, os.path.join(target_dir, i))
+    for i in files:
+        if os.path.isfile(i) and i.startswith('FULL'):
             os.rename(i, os.path.join(target_dir, i))
 
 
