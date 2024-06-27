@@ -980,8 +980,8 @@ main (int argc, char *argv[])
   /* @VALERIO -> compute the Environmental Awareness Ratio (EAR) */
   if(m_metric_sup)
   {
-    Simulator::Schedule(Seconds(4.0), &computeAwarenessRatio, sumoClient, AoR_radius);
-    Simulator::Schedule(Seconds(4.0), &computeAgeOfInformation);
+    //Simulator::Schedule(Seconds(4.0), &computeAwarenessRatio, sumoClient, AoR_radius);
+    //Simulator::Schedule(Seconds(4.0), &computeAgeOfInformation);
     Simulator::Schedule(Seconds(4.0), std::bind(&MetricSupervisor::startCheckCBR, metSup));
   }
 
@@ -1058,19 +1058,62 @@ main (int argc, char *argv[])
       csv_ofstream_ear << "VehicleDensity,RMR,MPR,T_Cpm_Gen,Average EAR" << std::endl;
     }
 
-    // Compute the Average EAR
+
+    // Write computed EAR measurements in one file
+    std::vector<double> EAR_Measurements_Overall = {};
+    for(auto & it:numberOfUEsEnabled)
+    {
+      std::string csv_name_ear_veh = "Results/EAR/EAR-" + it + ".csv";
+      std::ifstream csv_ifstream_ear_veh(csv_name_ear_veh); // Open the CSV file
+      std::string line; // String to hold each line of the CSV
+
+      while (std::getline(csv_ifstream_ear_veh, line)) { // Read each line from the CSV file
+        EAR_Measurements_Overall.push_back(std::stod(line)); // Add the line to the vector
+      }
+      csv_ifstream_ear_veh.close(); // Close the CSV file
+    }
+
+    std::ofstream csv_ofstream_ear_full;
+    std::string csv_name_ear_full = "Results/EAR/FULL_EAR.csv";
+    // The file already exists
+    csv_ofstream_ear_full.open(csv_name_ear_full,std::ofstream::out | std::ofstream::app);
+    for (auto & it:EAR_Measurements_Overall)
+    {
+      csv_ofstream_ear_full << it << std::endl;
+    }
+
     double Average_EAR = 0;
-    for(auto it:Average_EAR_Overall)
+    for (auto & it:EAR_Measurements_Overall)
     {
       Average_EAR += it;
     }
-    if(!Average_EAR_Overall.empty())
-      Average_EAR /= (double) Average_EAR_Overall.size();
+
+    Average_EAR /= (double) EAR_Measurements_Overall.size();
 
     // Fill the CVS file
     csv_ofstream_ear << vehicle_density << "," << VoIcomputationMethod << "," << penetrationRate << "," << T_GenCpm << "," << Average_EAR << std::endl;
 
     std::cout << "Average EAR: " << Average_EAR << std::endl;
+
+//    // Compute the Average EAR
+//    double Average_EAR = 0;
+//    for(auto it:Average_EAR_Overall)
+//    {
+//      Average_EAR += it;
+//    }
+//    if(!Average_EAR_Overall.empty())
+//      Average_EAR /= (double) Average_EAR_Overall.size();
+//
+//    // Fill the CVS file
+//    csv_ofstream_ear << vehicle_density << "," << VoIcomputationMethod << "," << penetrationRate << "," << T_GenCpm << "," << Average_EAR << std::endl;
+//
+//    std::cout << "Average EAR: " << Average_EAR << std::endl;
+
+
+
+
+
+
 
     /** @VALERIO AoI data processing */
     std::ofstream csv_ofstream_aoi;
@@ -1088,19 +1131,56 @@ main (int argc, char *argv[])
       csv_ofstream_aoi << "VehicleDensity,RMR,MPR,T_Cpm_Gen,Average AoI" << std::endl;
     }
 
-    // Compute the Average EAR
+    // Write computed EAR measurements in one file
+    std::vector<double> AoI_Measurements_Overall = {};
+    for(auto & it:numberOfUEsEnabled)
+    {
+      std::string csv_name_aoi_veh = "Results/AoI/AoI-" + it + ".csv";
+      std::ifstream csv_ifstream_aoi_veh(csv_name_aoi_veh); // Open the CSV file
+      std::string line; // String to hold each line of the CSV
+
+      while (std::getline(csv_ifstream_aoi_veh, line)) { // Read each line from the CSV file
+        AoI_Measurements_Overall.push_back(std::stod(line)); // Add the line to the vector
+      }
+      csv_ifstream_aoi_veh.close(); // Close the CSV file
+    }
+
+    std::ofstream csv_ofstream_aoi_full;
+    std::string csv_name_aoi_full = "Results/EAR/FULL_AoI.csv";
+    // The file already exists
+    csv_ofstream_aoi_full.open(csv_name_aoi_full,std::ofstream::out | std::ofstream::app);
+    for (auto & it:AoI_Measurements_Overall)
+    {
+      csv_ofstream_aoi_full << it << std::endl;
+    }
+
+
     double Average_AoI = 0;
-    for(auto it:Average_AoI_Overall)
+    for (auto & it:AoI_Measurements_Overall)
     {
       Average_AoI += it;
     }
-    if(!Average_AoI_Overall.empty())
-      Average_AoI /= (double) Average_EAR_Overall.size();
+
+    Average_AoI /= (double) AoI_Measurements_Overall.size();
 
     // Fill the CVS file
-    csv_ofstream_aoi << vehicle_density << "," << VoIcomputationMethod << "," << penetrationRate << "," << T_GenCpm << "," << Average_AoI / 1000 << std::endl;
+    csv_ofstream_aoi << vehicle_density << "," << VoIcomputationMethod << "," << penetrationRate << "," << T_GenCpm << "," << Average_AoI << std::endl;
 
-    std::cout << "Average AoI: " << Average_AoI / 1000 << " ms" <<  std::endl;
+    std::cout << "Average AoI: " << Average_AoI << " ms" <<  std::endl;
+
+//    // Compute the Average EAR
+//    double Average_AoI = 0;
+//    for(auto it:Average_AoI_Overall)
+//    {
+//      Average_AoI += it;
+//    }
+//    if(!Average_AoI_Overall.empty())
+//      Average_AoI /= (double) Average_EAR_Overall.size();
+//
+//    // Fill the CVS file
+//    csv_ofstream_aoi << vehicle_density << "," << VoIcomputationMethod << "," << penetrationRate << "," << T_GenCpm << "," << Average_AoI / 1000 << std::endl;
+//
+//    std::cout << "Average AoI: " << Average_AoI / 1000 << " ms" <<  std::endl;
   }
 
   return 0;

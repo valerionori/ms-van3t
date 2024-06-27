@@ -1,24 +1,25 @@
+
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation;
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License version 2 as
+* published by the Free Software Foundation;
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- * Created by:
- *  Francesco Raviglione, Politecnico di Torino (francescorav.es483@gmail.com)
- *  Carlos Mateo Risma Carletti, Politecnico di Torino (carlosrisma@gmail.com)
- * Modified by:
- *  Valerio Nori, Università di Modena e Reggio Emilia (valerio.nori@hotmail.com)
- *  Mattia Andreani, Università di Modena e Reggio Emilia (mattia.andreani@unimore.it)
+* Created by:
+*  Francesco Raviglione, Politecnico di Torino (francescorav.es483@gmail.com)
+*  Carlos Mateo Risma Carletti, Politecnico di Torino (carlosrisma@gmail.com)
+* Modified by:
+*  Valerio Nori, Università di Modena e Reggio Emilia (valerio.nori@hotmail.com)
+*  Mattia Andreani, Università di Modena e Reggio Emilia (mattia.andreani@unimore.it)
 */
 #include "LDM.h"
 #include <cmath>
@@ -31,35 +32,35 @@
 
 namespace ns3 {
 
-  // Function to compute the distance between two objects, given their Lon/Lat
-  double compute_dist(double lat_a, double lon_a, double lat_b, double lon_b)
-  {
-      // 12742000 is the mean Earth radius (6371 km) * 2 * 1000 (to convert from km to m)
-      return 12742000.0*asin(sqrt(sin(DEG_2_RAD(lat_b-lat_a)/2)*sin(DEG_2_RAD(lat_b-lat_a)/2)+cos(DEG_2_RAD(lat_a))*cos(DEG_2_RAD(lat_b))*sin(DEG_2_RAD(lon_b-lon_a)/2)*sin(DEG_2_RAD(lon_b-lon_a)/2)));
-  }
-  const point_type frontLeftPoint(0.0, 0.5);
-  const point_type frontRightPoint(0.0, -0.5);
-  const point_type backRightPoint(-1.0, -0.5);
-  const point_type backLeftPoint(-1.0, 0.5);
-  const point_type boxCenterPoint(-0.5, 0.0);
-  uint64_t get_timestamp_us(void)
-  {
-    time_t seconds;
-    uint64_t microseconds;
-    struct timespec now;
+// Function to compute the distance between two objects, given their Lon/Lat
+double compute_dist(double lat_a, double lon_a, double lat_b, double lon_b)
+{
+    // 12742000 is the mean Earth radius (6371 km) * 2 * 1000 (to convert from km to m)
+    return 12742000.0*asin(sqrt(sin(DEG_2_RAD(lat_b-lat_a)/2)*sin(DEG_2_RAD(lat_b-lat_a)/2)+cos(DEG_2_RAD(lat_a))*cos(DEG_2_RAD(lat_b))*sin(DEG_2_RAD(lon_b-lon_a)/2)*sin(DEG_2_RAD(lon_b-lon_a)/2)));
+}
+const point_type frontLeftPoint(0.0, 0.5);
+const point_type frontRightPoint(0.0, -0.5);
+const point_type backRightPoint(-1.0, -0.5);
+const point_type backLeftPoint(-1.0, 0.5);
+const point_type boxCenterPoint(-0.5, 0.0);
+uint64_t get_timestamp_us(void)
+{
+  time_t seconds;
+  uint64_t microseconds;
+  struct timespec now;
 
-    if(clock_gettime(CLOCK_REALTIME, &now) == -1) {
-            perror("Cannot get the current microseconds UTC timestamp");
-            return -1;
-    }
+  if(clock_gettime(CLOCK_REALTIME, &now) == -1) {
+          perror("Cannot get the current microseconds UTC timestamp");
+          return -1;
+  }
 
     seconds=now.tv_sec;
     microseconds=round(now.tv_nsec/1e3);
 
     // milliseconds, due to the rounding operation, shall not exceed 999999
     if(microseconds > 999999) {
-            seconds++;
-            microseconds=0;
+      seconds++;
+      microseconds=0;
     }
 
     return seconds*1000000+microseconds;
@@ -82,8 +83,8 @@ namespace ns3 {
     m_event_writeContents = Simulator::Schedule(MilliSeconds(LOG_FREQ+(desync*100)),&LDM::writeAllContents,this);
 
     /* @VALERIO -> Schedule AoR check */
-    m_event_checkAreaOfRelevance = Simulator::Schedule(MilliSeconds(LOG_FREQ+(desync*100)),&LDM::checkAreaOfRelevance,this);
-    //m_event_checkAgeOfInformation = Simulator::Schedule(MilliSeconds(LOG_FREQ+(desync*100)),&LDM::checkAgeOfInformation,this);
+    //m_event_checkAreaOfRelevance = Simulator::Schedule(MilliSeconds(LOG_FREQ+(desync*100)),&LDM::checkAreaOfRelevance,this);
+    m_event_checkAreaOfRelevance = Simulator::Schedule(Seconds(4+(desync*0.1)),&LDM::checkAreaOfRelevance,this);
 
     /* @VALERIO -> AoR Initialization */
     AoR_radius = 250;
@@ -95,11 +96,10 @@ namespace ns3 {
   }
 
   LDM::~LDM() {
-      Simulator::Cancel(m_event_deleteOlderThan);
-      Simulator::Cancel(m_event_writeContents);
-      Simulator::Cancel (m_event_checkAreaOfRelevance); // @VALERIO
-      //Simulator::Cancel(m_event_checkAgeOfInformation); // @VALERIO
-      clear();
+    Simulator::Cancel(m_event_deleteOlderThan);
+    Simulator::Cancel(m_event_writeContents);
+    Simulator::Cancel (m_event_checkAreaOfRelevance); // @VALERIO
+    clear();
   }
 
   LDM::LDM_error_t
@@ -121,10 +121,34 @@ namespace ns3 {
         m_card++;
         retval = LDM_OK;
     } else {
-        newVehicleData.age_us = it->second.vehData.age_us;
-        it->second.vehData = newVehicleData;
-        it->second.phData.insert (newVehicleData,m_stationID);
-        retval = LDM_UPDATED;
+
+      /**
+       * @VALERIO
+       *
+       * Compute the Age of Information of Perceived Objects (from received extended CPMs)
+       * and store its value in a CSV file.
+       */
+      if (it->second.vehData.stationID != m_stationID){
+        /* Compute the position of the ego vehicle */
+        libsumo::TraCIPosition egoPosXY = m_client->TraCIAPI::vehicle.getPosition(m_id);
+        /* Compute the position of the perceived object */
+        std::string sID = "veh" + std::to_string(it->second.vehData.stationID);
+        libsumo::TraCIPosition objPosXY = m_client->TraCIAPI::vehicle.getPosition(sID);
+        /* Check if the object is within the Area of Relevance */
+        if(sqrt(pow((egoPosXY.x-objPosXY.x),2) + pow((egoPosXY.y-objPosXY.y),2)) <= AoR_radius)
+        {
+          double AoI = ((double) Simulator::Now().GetMicroSeconds() - (double) it->second.vehData.timestamp_us) / 1000;
+          m_csv_name_aoi = "Results/AoI/AoI-" + m_id + ".csv";
+          m_csv_ofstream_aoi.open(m_csv_name_aoi, std::ios::app);
+          m_csv_ofstream_aoi << AoI << std::endl;
+          m_csv_ofstream_aoi.close();
+        }
+      }
+
+      newVehicleData.age_us = it->second.vehData.age_us;
+      it->second.vehData = newVehicleData;
+      it->second.phData.insert (newVehicleData,m_stationID);
+      retval = LDM_UPDATED;
     }
 
  /**
@@ -305,9 +329,9 @@ namespace ns3 {
         return LDM_ITEM_NOT_FOUND;
       }
     else{
-        it->second.vehData.lastCPMincluded = timestamp;
-        it->second.phData.setCPMincluded ();
-      }
+      it->second.vehData.lastCPMincluded = timestamp;
+      it->second.phData.setCPMincluded ();
+    }
     return LDM_OK;
   }
 
@@ -686,10 +710,26 @@ namespace ns3 {
     if (m_client == nullptr)
       return;
 
+    m_AoR_known.clear();
     m_AoR.clear();
+
+    double AoI;
 
     /* Compute egoVehicle position */
     libsumo::TraCIPosition egoPosXY = m_client->TraCIAPI::vehicle.getPosition(m_id);
+
+    /* Get all IDs in the simulation and compare their distance from the egoVehicle */
+    std::vector<std::string> allIDs;
+    allIDs = m_client->vehicle.getIDList ();  // Get all IDs in the simulation
+    allIDs.erase(std::remove(allIDs.begin(), allIDs.end(), m_id), allIDs.end()); // Exclude this UE
+    for (auto & it : allIDs)
+    {
+      libsumo::TraCIPosition objPosXY = m_client->TraCIAPI::vehicle.getPosition(it);
+      if(sqrt(pow((egoPosXY.x-objPosXY.x),2) + pow((egoPosXY.y-objPosXY.y),2)) <= AoR_radius)
+      {
+        m_AoR.push_back(it);
+      }
+    }
 
     /* Scan the LDM to check which UEs are within the AoR */
     for (auto & it : m_LDM)
@@ -700,50 +740,36 @@ namespace ns3 {
         libsumo::TraCIPosition objPosXY = m_client->TraCIAPI::vehicle.getPosition(sID);
 
         if(sqrt(pow((egoPosXY.x-objPosXY.x),2) + pow((egoPosXY.y-objPosXY.y),2)) <= AoR_radius)
-        {
-          m_AoR.insert (m_AoR.end(), sID);
-          /* Evaluate the Age of Information of objects within the AoR */
-          m_csv_name_aoi = "Results/AoI/AoI-" + m_id + ".csv";
-
-          m_csv_ofstream_aoi.open (m_csv_name_aoi, std::ios::out);
-          m_csv_ofstream_aoi << it.second.vehData.timestamp_us << ",";
-          m_csv_ofstream_aoi << std::endl;
-
-          m_csv_ofstream_aoi.close ();
-        }
+          m_AoR_known.push_back(sID);
       }
     }
 
-    /* Fill the CSV file */
-    m_csv_name_aor = "Results/AoR/AoR-" + m_id + ".csv";
-    m_csv_ofstream_aor.open (m_csv_name_aor, std::ios::out);
+    /* Initialize the variables */
+    double EAR;
+    double matching_objects = 0;
+
+    /* Compare the two vectors to check matching objects */
     for (const auto& element : m_AoR) {
-      m_csv_ofstream_aor << element << ",";
+      for (const auto& element_known : m_AoR_known) {
+        if(element == element_known)
+          matching_objects++;
+      }
     }
 
-    m_csv_ofstream_aor << std::endl;
-    m_csv_ofstream_aor.close ();
+    /* Compute the Awareness Ratio */
+    if(m_AoR.empty() && m_AoR_known.empty())
+      EAR = 1;
+    else if(m_AoR.size () >= m_AoR_known.size())
+      EAR = matching_objects/double(m_AoR.size ());
+    else
+      EAR = matching_objects/double(m_AoR_known.size ());
+
+    /* Store computed EAR in a CSV file */
+    m_csv_name_ear = "Results/EAR/EAR-" + m_id + ".csv";
+    m_csv_ofstream_ear.open(m_csv_name_ear, std::ios::app);
+    m_csv_ofstream_ear << EAR << std::endl;
+    m_csv_ofstream_ear.close ();
 
     m_event_checkAreaOfRelevance = Simulator::Schedule(MilliSeconds(LOG_FREQ),&LDM::checkAreaOfRelevance,this);
-  }
-
-  /* @VALERIO */
-  void
-  LDM::checkAgeOfInformation ()
-  {
-    if (m_client == nullptr)
-      return;
-
-    /* Fill the CSV file */
-    m_csv_name_aoi = "Results/AoI/AoI-" + m_id + ".csv";
-    m_csv_ofstream_aoi.open (m_csv_name_aoi, std::ios::out);
-    for (const auto& it : m_LDM) {
-      m_csv_ofstream_aoi << it.second.vehData.timestamp_us << ",";
-    }
-
-    m_csv_ofstream_aoi << std::endl;
-    m_csv_ofstream_aoi.close ();
-
-    m_event_checkAgeOfInformation = Simulator::Schedule(MilliSeconds(LOG_FREQ),&LDM::checkAgeOfInformation,this);
   }
 }
